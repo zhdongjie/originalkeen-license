@@ -26,9 +26,9 @@
     </developers>
 
     <scm>
-        <connection>scm:git:https://github.com/originalkeen/license.git</connection>
-        <developerConnection>scm:git:https://github.com/originalkeen/license.git</developerConnection>
-        <url>https://github.com/originalkeen/license</url>
+        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
+        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
+        <url>https://github.com/zhdongjie/originalkeen-license</url>
     </scm>
 
     <properties>
