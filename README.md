@@ -180,6 +180,78 @@ public LicenseParam customParam(LicenseProperties properties) {
 
 ---
 
+## Build Guide
+
+### 1. Start GPG Agent (Optional)
+
+Before signing, ensure `gpg-agent` is running. You can start it manually:
+
+```
+gpg-agent --daemon
+```
+
+### 2. Local Build and GPG Signing
+
+You can build the project, generate sources, Javadoc, and sign artifacts using:
+
+```
+mvn clean verify gpg:sign
+```
+
+Or directly sign a specific file using GPG:
+
+```
+gpg --sign path/to/file
+```
+
+> These commands **do not upload artifacts** to any remote repository. They only validate the build and create signed artifacts locally.
+
+------
+
+### 3. Deploy to Maven Central
+
+To publish artifacts to Maven Central, use the **Release Profile**:
+
+```
+mvn clean deploy -P release
+```
+
+Notes:
+
+- `-P release` activates the Release Profile in the parent POM, which includes GPG signing and Central Publishing plugin.
+- Ensure your `~/.m2/settings.xml` contains Sonatype credentials:
+
+```
+<servers>
+    <server>
+        <id>central</id>
+        <username>YourSonatypeUsername</username>
+        <password>YourOSSRHToken</password>
+    </server>
+</servers>
+```
+
+- Make sure your local GPG key is available and unlocked to avoid signing failures.
+
+------
+
+### 4. Important Notes
+
+1. **Submodule versions** are controlled by the parent POM. No changes are needed in submodules.
+2. **GPG signing failures** usually happen if the key is locked or requires a passphrase. Use `gpg-agent` or `--pinentry-mode loopback` to resolve.
+3. **Do not execute `mvn deploy` without `-P release`**, as it may fail due to missing `<distributionManagement>` or attempt unintended deployment.
+
+------
+
+### 5. References
+
+- TrueLicense Official Documentation
+- [Maven GPG Plugin](https://maven.apache.org/plugins/maven-gpg-plugin/)
+- Central Publishing Maven Plugin
+- [GnuPG Manual](https://gnupg.org/documentation/manuals/gnupg/)
+
+---
+
 ## Notes
 
 * Public key files must be accessible (classpath or filesystem).
