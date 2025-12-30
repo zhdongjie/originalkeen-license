@@ -1,0 +1,81 @@
+# ========================
+# 操作系统文件
+# ========================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ========================
+# IDE 文件
+# ========================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse
+.project
+.classpath
+.settings/
+bin/
+
+# VS Code
+.vscode/
+
+# ========================
+# 构建输出
+# ========================
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# ========================
+# 日志 & 临时文件
+# ========================
+*.log
+*.tmp
+*.swp
+*.swo
+*.bak
+*.orig
+*.rej
+
+# ========================
+# 环境文件
+# ========================
+# Spring Boot
+application.properties
+application.yml
+application-*.yml
+bootstrap.properties
+bootstrap.yml
+
+# ========================
+# 密钥 & 安全文件
+# ========================
+*.jks
+*.p12
+*.pem
+*.key
+*.crt
+*.jwk
