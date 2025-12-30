@@ -6,6 +6,7 @@
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
     <version>1.0.0</version>
+    <packaging>pom</packaging>
     <name>Original Keen License</name>
     <description>A Spring Boot library for license management using TrueLicense.</description>
 
@@ -162,6 +163,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
