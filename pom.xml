@@ -9,6 +9,7 @@
     <packaging>pom</packaging>
     <name>Original Keen License</name>
     <description>A Spring Boot library for license management using TrueLicense.</description>
+    <url>https://github.com/zhdongjie/originalkeen-license</url>
 
     <licenses>
         <license>
@@ -65,6 +66,11 @@
             <dependency>
                 <groupId>org.eu.originalkeen</groupId>
                 <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
+                <version>${originalkeen-license.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-spring-boot-starter</artifactId>
                 <version>${originalkeen-license.version}</version>
             </dependency>
             <dependency>

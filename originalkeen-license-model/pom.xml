@@ -12,7 +12,29 @@
     <artifactId>originalkeen-license-model</artifactId>
     <packaging>jar</packaging>
 
-    <name>Originalkeen License Model</name>
-    <description>License protocol models shared between license runtime and platform</description>
+    <name>Original Keen License Model</name>
+    <url>https://github.com/zhdongjie/originalkeen-license</url>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>originalkeen</id>
+            <name>Zhang Dong Jie</name>
+            <email>zhdongjie@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
+        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
+        <url>https://github.com/zhdongjie/originalkeen-license</url>
+    </scm>
 
 </project>
