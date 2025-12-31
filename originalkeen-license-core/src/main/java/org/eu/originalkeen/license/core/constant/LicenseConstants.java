@@ -1,5 +1,7 @@
 package org.eu.originalkeen.license.core.constant;
 
+import java.util.Set;
+
 /**
  * License module constants.
  * <p>
@@ -19,6 +21,15 @@ public class LicenseConstants {
      * Default character set for XML files
      */
     public static final String XML_CHARSET = "UTF-8";
+
+    /**
+     * Default exclude paths set for filter
+     */
+    public static final Set<String> DEFAULT_EXCLUDE_PATHS = Set.of(
+        "/actuator/",
+        "/static/",
+        "/favicon.ico"
+    );
 
     /**
      * Private constructor to prevent instantiation.

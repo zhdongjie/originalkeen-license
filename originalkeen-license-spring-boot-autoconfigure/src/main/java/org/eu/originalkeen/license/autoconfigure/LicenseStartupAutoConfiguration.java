@@ -10,6 +10,24 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.util.StringUtils;
 
+/**
+ * {@code LicenseStartupAutoConfiguration} is a Spring Boot auto-configuration
+ * class that runs at application startup to ensure the license is installed and valid.
+ *
+ * <p>This configuration is conditional on:</p>
+ * <ul>
+ *     <li>{@code originalkeen.license.enabled=true} (default true)</li>
+ * </ul>
+ *
+ * <p>The class implements {@link ApplicationRunner}, so its {@code run} method
+ * executes after the Spring Boot application context is fully initialized.</p>
+ *
+ * <p>This ensures that the license is installed at startup before the application
+ * begins handling requests or executing scheduled tasks.</p>
+ *
+ * <p>It is configured to run after {@link LicenseAutoConfiguration}, ensuring
+ * that all necessary beans (e.g., {@link LicenseVerifyService}) are available.</p>
+ */
 @AutoConfiguration(after = LicenseAutoConfiguration.class)
 @ConditionalOnProperty(
         prefix = "originalkeen.license",
@@ -33,9 +51,16 @@ public class LicenseStartupAutoConfiguration implements ApplicationRunner {
     }
 
     /**
-     * Runs on application startup and attempts to install the license if enabled.
+     * Executes at application startup to install the license if enabled and configured.
      *
-     * @param args Application arguments
+     * <p>Logic:</p>
+     * <ul>
+     *     <li>If license verification is disabled via {@code originalkeen.license.enabled=false}, it skips installation.</li>
+     *     <li>If {@code originalkeen.license.license-path} is not set, it logs a warning and skips installation.</li>
+     *     <li>Otherwise, attempts to install the license using {@link LicenseVerifyService}.</li>
+     * </ul>
+     *
+     * @param args the application arguments passed by Spring Boot
      */
     @Override
     public void run(ApplicationArguments args) {

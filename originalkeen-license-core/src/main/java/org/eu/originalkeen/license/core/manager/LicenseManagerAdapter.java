@@ -16,6 +16,39 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+/**
+ * {@code LicenseManagerAdapter} is a customized extension of TrueLicense
+ * {@link LicenseManager} that adds hardware-binding verification logic.
+ *
+ * <p>This class acts as a bridge between the TrueLicense core mechanism
+ * and application-specific hardware validation rules. It delegates
+ * hardware data collection to a {@link HardwareDataProvider} and
+ * compares the runtime hardware information with the values embedded
+ * in the license.</p>
+ *
+ * <p>Responsibilities of this adapter include:</p>
+ * <ul>
+ *   <li>Creating, installing, and verifying license keys</li>
+ *   <li>Performing native TrueLicense validations (time, signature, integrity)</li>
+ *   <li>Validating hardware constraints such as IP address, MAC address,
+ *       motherboard serial, and CPU serial</li>
+ *   <li>Providing early warnings when a license is close to expiration</li>
+ * </ul>
+ *
+ * <p>The hardware validation rules are intentionally designed to be
+ * tolerant: if a specific hardware attribute is not defined in the
+ * license, the corresponding validation will be skipped.</p>
+ *
+ * <p>This class is thread-safe. All critical operations related to
+ * license creation, installation, and verification are synchronized
+ * to prevent concurrent state corruption.</p>
+ *
+ * @author Original Keen
+ * @see LicenseManager
+ * @see HardwareDataProvider
+ * @see LicenseCheckModel
+ */
 public class LicenseManagerAdapter extends LicenseManager {
     private static final Logger log = LogManager.getLogger(LicenseManagerAdapter.class);
 

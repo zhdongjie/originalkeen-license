@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <packaging>pom</packaging>
     <name>Original Keen License</name>
     <description>A Spring Boot library for license management using TrueLicense.</description>
@@ -42,8 +42,8 @@
         <spring-boot.version>3.5.9</spring-boot.version>
         <truelicense-core.version>1.33</truelicense-core.version>
         <log4j2.version>2.25.3</log4j2.version>
-        <originalkeen-license.version>1.0.0</originalkeen-license.version>
-        <originalkeen-license-model.version>1.0.0</originalkeen-license-model.version>
+        <originalkeen-license.version>1.0.1</originalkeen-license.version>
+        <originalkeen-license-model.version>1.0.1</originalkeen-license-model.version>
     </properties>
 
     <modules>

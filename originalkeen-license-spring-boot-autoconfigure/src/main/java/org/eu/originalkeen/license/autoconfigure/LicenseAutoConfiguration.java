@@ -17,13 +17,36 @@ import org.springframework.context.annotation.Bean;
 
 import java.util.prefs.Preferences;
 
+/**
+ * {@code LicenseAutoConfiguration} provides the default beans
+ * necessary to enable the Original Keen License system in a Spring Boot application.
+ *
+ * <p>All beans are conditional on missing beans, allowing users to
+ * override any part of the license system by providing their own implementation.</p>
+ *
+ * <p>Beans provided include:</p>
+ * <ul>
+ *     <li>{@link HardwareDataProvider} – default OS-specific provider</li>
+ *     <li>{@link LicenseParam} – license parameters configured from {@link LicenseProperties}</li>
+ *     <li>{@link LicenseManagerAdapter} – encapsulates license creation, installation, and verification</li>
+ *     <li>{@link LicenseVerifyService} – service API for license installation and verification</li>
+ *     <li>{@link LicenseFilter} – web filter for HTTP request license enforcement</li>
+ * </ul>
+ *
+ * <p>This configuration is automatically enabled when the application
+ * is a Spring Boot application and {@link LicenseProperties} are
+ * bound from configuration.</p>
+ */
 @AutoConfiguration
 @EnableConfigurationProperties(LicenseProperties.class)
 public class LicenseAutoConfiguration {
 
     /**
-     * Provide a default HardwareDataProvider bean if none is defined.
-     * Chooses Windows or Linux implementation based on the OS.
+     * Provides a default {@link HardwareDataProvider} bean if none is defined.
+     * The implementation is chosen based on the underlying OS.
+     * Windows -> {@link WindowsHardwareProvider}, others -> {@link LinuxHardwareProvider}.
+     *
+     * @return OS-specific hardware data provider
      */
     @Bean
     @ConditionalOnMissingBean(HardwareDataProvider.class)
@@ -33,11 +56,11 @@ public class LicenseAutoConfiguration {
     }
 
     /**
-     * Provide a default LicenseParam bean if none is defined.
-     * Initializes the license parameters using LicenseProperties.
+     * Provides a default {@link LicenseParam} bean if none is defined.
+     * Initializes the license parameters using {@link LicenseProperties}.
      *
      * @param properties License configuration properties
-     * @return LicenseParam instance
+     * @return {@link LicenseParam} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseParam.class)
@@ -63,12 +86,12 @@ public class LicenseAutoConfiguration {
     }
 
     /**
-     * Provide a default LicenseManagerAdapter bean if none is defined.
-     * Binds the LicenseParam and HardwareDataProvider together.
+     * Provides a default {@link LicenseManagerAdapter} bean if none is defined.
+     * Binds {@link LicenseParam} and {@link HardwareDataProvider} together.
      *
      * @param licenseParam the license parameter
-     * @param provider     the hardware data provider
-     * @return LicenseManagerAdapter instance
+     * @param provider the hardware data provider
+     * @return {@link LicenseManagerAdapter} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseManagerAdapter.class)
@@ -80,11 +103,11 @@ public class LicenseAutoConfiguration {
     }
 
     /**
-     * Provide a default LicenseVerifyService bean if none is defined.
+     * Provides a default {@link LicenseVerifyService} bean if none is defined.
      * Encapsulates license installation and verification logic.
      *
      * @param licenseManagerAdapter the license manager adapter
-     * @return LicenseVerifyService instance
+     * @return {@link LicenseVerifyService} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseVerifyService.class)
@@ -93,21 +116,16 @@ public class LicenseAutoConfiguration {
     }
 
     /**
-     * Register a LicenseCheckListener bean to automatically install the License file
-     * when the Spring Boot application has started.
+     * Provides a {@link LicenseFilter} bean for web request license verification.
+     * Users can override this filter by providing their own {@link LicenseFilter} bean.
      *
-     * <p>This listener will be triggered after the application context is refreshed
-     * and the application has started, checking if a license path is configured.
-     * If a license path is set, it installs the license using LicenseVerifyService.
-     *
-     * @param properties the LicenseProperties configuration, containing license path and settings
-     * @param service the LicenseVerifyService used to install the license
-     * @return a LicenseCheckListener instance that listens for ApplicationStartedEvent
+     * @param service the license verification service
+     * @param properties license configuration properties
+     * @return {@link LicenseFilter} instance
      */
     @Bean
-    public LicenseCheckListener licenseCheckListener(LicenseProperties properties, LicenseVerifyService service) {
-        return new LicenseCheckListener(properties, service);
+    public LicenseFilter licenseFilter(LicenseVerifyService service, LicenseProperties properties) {
+        return new LicenseFilter(service, properties);
     }
-
 
 }

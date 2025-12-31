@@ -1,3 +1,3 @@
 org.eu.originalkeen.license.autoconfigure.LicenseAutoConfiguration
-org.eu.originalkeen.license.autoconfigure.LicenseWebAutoConfiguration
+org.eu.originalkeen.license.autoconfigure.LicenseWebFilterAutoConfiguration
 org.eu.originalkeen.license.autoconfigure.LicenseStartupAutoConfiguration
