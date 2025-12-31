@@ -1,5 +1,5 @@
 # ========================
-# 操作系统文件
+# Operating System Files
 # ========================
 # macOS
 .DS_Store
@@ -13,7 +13,7 @@ Desktop.ini
 $RECYCLE.BIN/
 
 # ========================
-# IDE 文件
+# IDE Files
 # ========================
 # IntelliJ IDEA
 .idea/
@@ -31,7 +31,7 @@ bin/
 .vscode/
 
 # ========================
-# 构建输出
+# Build Output
 # ========================
 # Maven
 target/
@@ -50,7 +50,7 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 
 # ========================
-# 日志 & 临时文件
+# Log & Temporary Files
 # ========================
 *.log
 *.tmp
@@ -61,7 +61,7 @@ build/
 *.rej
 
 # ========================
-# 环境文件
+# Environment Files
 # ========================
 # Spring Boot
 application.properties
@@ -71,7 +71,7 @@ bootstrap.properties
 bootstrap.yml
 
 # ========================
-# 密钥 & 安全文件
+# Key & Security Files
 # ========================
 *.jks
 *.p12
@@ -79,3 +79,8 @@ bootstrap.yml
 *.key
 *.crt
 *.jwk
+
+# ========================
+# Maven Temporary Backup Files
+# ========================
+*.versionsBackup

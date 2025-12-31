@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -12,55 +12,35 @@
     <packaging>jar</packaging>
 
     <name>OriginalKeen License Spring Boot Starter</name>
-    <url>https://github.com/zhdongjie/originalkeen-license</url>
-
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>originalkeen</id>
-            <name>Zhang Dong Jie</name>
-            <email>zhdongjie@gmail.com</email>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
-        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
-        <url>https://github.com/zhdongjie/originalkeen-license</url>
-    </scm>
+    <description>
+        The primary entry point for Spring Boot integration. It provides zero-configuration
+        setup to enable automated license installation and web-based request enforcement.
+    </description>
 
     <dependencies>
-        <!-- 自动配置模块 -->
+        <!-- Automatic configuration module -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
         </dependency>
 
-        <!-- 核心模块 -->
+        <!-- Core module -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-core</artifactId>
         </dependency>
 
-        <!-- 模型模块 -->
+        <!-- Model module -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-model</artifactId>
         </dependency>
 
-        <!-- Web 支持 -->
+        <!-- Web support -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
             <optional>true</optional>
         </dependency>
-
     </dependencies>
 </project>

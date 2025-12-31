@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -12,57 +12,38 @@
     <packaging>jar</packaging>
 
     <name>Original Keen License Spring Boot Autoconfigure</name>
-    <url>https://github.com/zhdongjie/originalkeen-license</url>
-
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>originalkeen</id>
-            <name>Zhang Dong Jie</name>
-            <email>zhdongjie@gmail.com</email>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
-        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
-        <url>https://github.com/zhdongjie/originalkeen-license</url>
-    </scm>
+    <description>
+        Spring Boot Auto-configuration for the OriginalKeen License system. It handles
+        conditional bean registration for hardware providers, verification services, and security filters.
+    </description>
 
     <dependencies>
-        <!-- Spring Boot 自动配置依赖 -->
+        <!-- Spring Boot automatically configures dependencies -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
 
-        <!-- Spring Boot 配置注解依赖 -->
+        <!-- Spring Boot configuration annotation dependency -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
 
-        <!-- 核心模块依赖 -->
+        <!-- Core module dependencies -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-core</artifactId>
         </dependency>
 
-        <!-- 模型模块依赖 -->
+        <!-- Model module dependencies -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-model</artifactId>
         </dependency>
 
-        <!-- 可选，Web 自动配置需要 -->
+        <!-- Optional, required for Web automatic configuration -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -75,7 +56,7 @@
             </exclusions>
         </dependency>
 
-        <!-- 日志 -->
+        <!-- Log -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-api</artifactId>
@@ -87,7 +68,7 @@
     </dependencies>
     <build>
         <plugins>
-            <!-- Spring Boot 配置注解处理器 -->
+            <!-- Spring Boot configuration annotation processor -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

@@ -1,262 +1,121 @@
 # OriginalKeen License
 
-**OriginalKeen License** is a **Java license management and verification system** for enterprise applications.
-It supports hardware-bound licenses, automatic installation and verification, and seamless integration with Spring Boot.
+**OriginalKeen License** is a sophisticated **Java license management and verification system** designed for enterprise-grade applications. It provides a robust framework for hardware-bound licensing, automated installation, and seamless integration with the Spring Boot ecosystem.
 
-This project is modularized into four modules:
-
-* `originalkeen-license-model` – Defines license data models and constants.
-* `originalkeen-license-core` – Core library for license creation, verification, and hardware detection.
-* `originalkeen-license-spring-boot-autoconfigure` – Spring Boot auto-configuration for license integration.
-* `originalkeen-license-spring-boot-starter` – Starter module for zero-configuration Spring Boot integration.
+This project follows a modular architecture and utilizes the **BOM (Bill of Materials)** pattern to ensure dependency consistency and simplified version management.
 
 ---
 
-## Features
+## Key Features
 
-* Hardware binding: CPU, motherboard, IP, and MAC address.
-* License expiration management with pre-warning.
-* Web request interception with path whitelist.
-* Cross-platform support: Windows and Linux.
-* Spring Boot integration via auto-configuration and starter.
-* Verification caching for improved performance.
-
----
-
-## Modules Overview
-
-### 1. `originalkeen-license-model`
-
-Provides **data models and constants** for license management:
-
-* `LicenseCheckModel` – Contains hardware fingerprint information (CPU, motherboard, MAC, IP).
-* `LicenseConstants` – Default constants like buffer size and XML charset.
-* Enums or other utility classes as needed for license metadata.
-
-This module is used by **core, configure, and starter** to unify license data structures.
+* **Hardware Fingerprinting**: Bind licenses to specific hardware identifiers, including CPU ID, motherboard serial number, IP addresses, and MAC addresses.
+* **Expiration Management**: Integrated lifecycle monitoring with automated warnings 15 days prior to license expiration.
+* **Web Request Enforcement**: High-performance Web Interceptor support with configurable Ant-style path whitelisting.
+* **Cross-Platform Compatibility**: Native support for both Windows and Linux environments.
+* **Verification Caching**: Optimized performance through an internal cache (default 60s) for successful verification results.
 
 ---
 
-### 2. `originalkeen-license-core`
+## Module Overview
 
-Contains the **core functionality**:
+The project is organized into five specialized modules:
 
-* License installation, verification, and creation (`LicenseManagerAdapter`, `LicenseVerifyService`).
-* Hardware detection (`HardwareDataProvider`, `WindowsHardwareProvider`, `LinuxHardwareProvider`).
-* IP and MAC utilities (`IpAddressUtils`).
-* License content handling and decoding.
-* Cache for verification results (default 60 seconds).
+1. **`originalkeen-license-dependencies` (BOM)**: The **Single Source of Truth**. It centralizes version definitions for all internal modules and third-party dependencies to prevent version conflicts.
+2. **`originalkeen-license-model`**: Defines the core data models and constants for the license protocol.
+3. **`originalkeen-license-core`**: The engine of the system, providing hardware detection, license installation, and verification logic.
+4. **`originalkeen-license-spring-boot-autoconfigure`**: Handles the automated registration of Spring beans based on the application environment.
+5. **`originalkeen-license-spring-boot-starter`**: The primary entry point for users, offering zero-configuration integration for Spring Boot applications.
 
-**Programmatic usage:**
+---
 
-```java
-LicenseVerifyService verifyService = new LicenseVerifyService(licenseManagerAdapter);
-verifyService.install("/path/to/license.lic");
+## Quick Start
 
-if (verifyService.verify()) {
-    System.out.println("License is valid");
-} else {
-    System.out.println("License verification failed");
-}
+### 1. Import the BOM
+
+To ensure version alignment, it is highly recommended to import the BOM in your project's `dependencyManagement` section:
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.eu.originalkeen</groupId>
+            <artifactId>originalkeen-license-dependencies</artifactId>
+            <version>1.0.1</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
 ```
 
----
+```xml
+<dependencies>
+    <dependency>
+        <groupId>org.eu.originalkeen</groupId>
+        <artifactId>originalkeen-license-spring-boot-starter</artifactId>
+    </dependency>
+</dependencies>
 
-### 3. `originalkeen-license-spring-boot-autoconfigure`
-
-Spring Boot **auto-configuration** module:
-
-* Registers beans: `HardwareDataProvider`, `LicenseManagerAdapter`, `LicenseVerifyService`, `LicenseParam`.
-* Detects OS automatically and configures the proper hardware provider.
-* Supports automatic license installation on application startup (`LicenseCheckListener`).
-
-**Enable auto-configuration via starter** or manual import:
-
-```java
-@Import(LicenseAutoConfiguration.class)
 ```
 
----
+### 2. Configuration
 
-### 4. `originalkeen-license-spring-boot-starter`
-
-Spring Boot **starter** module for quick integration:
-
-* Registers `LicenseWebAutoConfiguration` when `web-enabled=true`.
-* Automatically adds a `LicenseInterceptor` to verify all HTTP requests.
-* Supports `exclude-paths` whitelist (e.g., `/login`, `/actuator/**`).
-* Uses properties from `application.yml` or `application.properties`.
-
-**Example configuration:**
+Configure the license properties in your `application.yml`:
 
 ```yaml
 originalkeen:
   license:
     enabled: true
     web-enabled: true
-    subject: "MyAppLicense"
-    license-path: "classpath:license.lic"
+    subject: "YourApplicationSubject"
+    license-path: "/path/to/license.lic"
     public-alias: "public"
     public-key-store-path: "classpath:publicKey.keystore"
-    public-password: "changeit"
+    public-password: "your_password"
     exclude-paths:
       - /login
       - /actuator/**
+
 ```
 
 ---
 
-## Quick Start
+## Development & Release Workflow
 
-1. **Add the starter dependency**:
+We adhere to a standardized Maven multi-module release process. **Directly modifying version numbers in sub-module `pom.xml` files is strictly prohibited.**
 
-```xml
-<dependency>
-    <groupId>org.eu.originalkeen</groupId>
-    <artifactId>originalkeen-license-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
-</dependency>
-```
-
-2. **Configure license properties** in `application.yml` (see above).
-
-3. **Start the application**: license will be installed automatically if `license-path` is provided.
-
-4. **Programmatic verification**:
-
-```java
-@Autowired
-private LicenseVerifyService licenseVerifyService;
-
-if (!licenseVerifyService.verify()) {
-    throw new RuntimeException("License verification failed");
-}
-```
-
----
-
-## Web Interceptor
-
-* Activated when `web-enabled=true`.
-* All HTTP requests are checked; unauthorized requests return **HTTP 403 Forbidden**.
-* `exclude-paths` allow whitelisting specific endpoints.
-
----
-
-## Hardware Binding
-
-* Detects **CPU ID**, **motherboard serial**, **MAC address**, and **IP addresses**.
-* Supports Windows and Linux.
-* Hardware provider can be customized by implementing `HardwareDataProvider`.
-
----
-
-## Logging and Cache
-
-* Logs installation success/failure.
-* Logs verification success/failure.
-* Logs upcoming license expiration (15 days before).
-* Verification results cached for 60 seconds to reduce repeated checks.
-
----
-
-## Extending
-
-Override default beans if needed:
-
-```java
-@Bean
-@ConditionalOnMissingBean(HardwareDataProvider.class)
-public HardwareDataProvider customProvider() {
-    return new CustomHardwareProvider();
-}
-
-@Bean
-@ConditionalOnMissingBean(LicenseParam.class)
-public LicenseParam customParam(LicenseProperties properties) {
-    return new CustomLicenseParam(properties);
-}
-```
-
----
-
-## Build Guide
-
-### 1. Start GPG Agent (Optional)
-
-Before signing, ensure `gpg-agent` is running. You can start it manually:
+### Standard Release Steps
+1. **Develop**: Implement features and tests.
+2. **Version Update**: One command to sync all modules (including BOM):
+```bash
+   mvn versions:set -DnewVersion=1.0.2
 
 ```
-gpg-agent --daemon
-```
 
-### 2. Local Build and GPG Signing
 
-You can build the project, generate sources, Javadoc, and sign artifacts using:
-
-```
-mvn clean verify gpg:sign
-```
-
-Or directly sign a specific file using GPG:
+3. **Confirmation**: Verify the changes across all modules and commit the new versions:
+```bash
+mvn versions:commit
 
 ```
-gpg --sign path/to/file
-```
 
-> These commands **do not upload artifacts** to any remote repository. They only validate the build and create signed artifacts locally.
 
-------
-
-### 3. Deploy to Maven Central
-
-To publish artifacts to Maven Central, use the **Release Profile**:
-
-```
+4. **Deployment**: Execute the release profile to trigger GPG signing and deploy artifacts to the Central Repository:
+```bash
 mvn clean deploy -P release
-```
-
-Notes:
-
-- `-P release` activates the Release Profile in the parent POM, which includes GPG signing and Central Publishing plugin.
-- Ensure your `~/.m2/settings.xml` contains Sonatype credentials:
 
 ```
-<servers>
-    <server>
-        <id>central</id>
-        <username>YourSonatypeUsername</username>
-        <password>YourOSSRHToken</password>
-    </server>
-</servers>
-```
 
-- Make sure your local GPG key is available and unlocked to avoid signing failures.
 
-------
-
-### 4. Important Notes
-
-1. **Submodule versions** are controlled by the parent POM. No changes are needed in submodules.
-2. **GPG signing failures** usually happen if the key is locked or requires a passphrase. Use `gpg-agent` or `--pinentry-mode loopback` to resolve.
-3. **Do not execute `mvn deploy` without `-P release`**, as it may fail due to missing `<distributionManagement>` or attempt unintended deployment.
-
-------
-
-### 5. References
-
-- TrueLicense Official Documentation
-- [Maven GPG Plugin](https://maven.apache.org/plugins/maven-gpg-plugin/)
-- Central Publishing Maven Plugin
-- [GnuPG Manual](https://gnupg.org/documentation/manuals/gnupg/)
 
 ---
 
-## Notes
+## Important Notes
 
-* Public key files must be accessible (classpath or filesystem).
-* Hardware detection may require root/admin privileges on Linux/Windows.
-* Cached verification only stores successful verifications; failures are checked immediately.
+* **System Privileges**: Extracting CPU or motherboard serial numbers on Linux may require `root` or elevated administrative privileges.
+* **GPG Signing**: Ensure your `gpg-agent` is running and the signing key is unlocked before initiating a release.
+* **Inheritance**: Sub-module versions are managed by the Parent POM and the internal BOM. No manual version declarations are needed within individual modules.
 
 ---
 

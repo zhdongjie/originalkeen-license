@@ -9,16 +9,45 @@ import org.apache.logging.log4j.Logger;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
 import org.eu.originalkeen.license.core.service.LicenseVerifyService;
 import org.springframework.lang.NonNull;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+/**
+ * {@code LicenseFilter} is a standard Servlet filter that enforces license validation
+ * for incoming HTTP requests in a Spring Web application.
+ *
+ * <p>This filter extends {@link OncePerRequestFilter} to ensure a single execution per
+ * request dispatch. It uses {@link AntPathMatcher} to support flexible exclusion patterns
+ * (e.g., {@code /static/**}) defined in the application configuration.</p>
+ *
+ * <p>The filtering logic follows these rules:</p>
+ * <ul>
+ * <li>If {@code originalkeen.license.web-enabled} is false, the filter is bypassed.</li>
+ * <li>If the request URI matches any pattern in {@code exclude-paths}, the filter is bypassed.</li>
+ * <li>Otherwise, the {@link LicenseVerifyService} is invoked to validate the current license.</li>
+ * </ul>
+ *
+ * <p>If verification fails, the request is rejected with an <b>HTTP 403 Forbidden</b> error,
+ * preventing further processing by the application.</p>
+ * * @author Original Keen
+ *
+ * @see LicenseVerifyService
+ * @see LicenseProperties
+ * @see AntPathMatcher
+ */
 public class LicenseFilter extends OncePerRequestFilter {
 
     private static final Logger log = LogManager.getLogger(LicenseFilter.class);
 
     private final LicenseVerifyService licenseVerifyService;
     private final LicenseProperties licenseProperties;
+
+    /**
+     * Standard Ant-style path matcher for wildcard pattern support.
+     */
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
     public LicenseFilter(
             LicenseVerifyService licenseVerifyService,
@@ -37,8 +66,8 @@ public class LicenseFilter extends OncePerRequestFilter {
      *
      * <p>Bypass conditions:</p>
      * <ul>
-     *   <li>Web license checking is disabled via configuration</li>
-     *   <li>The request URI matches one of the configured exclude paths</li>
+     * <li>Web license checking is disabled via configuration</li>
+     * <li>The request URI matches one of the configured exclude paths using Ant-style matching</li>
      * </ul>
      */
     @Override
@@ -51,7 +80,7 @@ public class LicenseFilter extends OncePerRequestFilter {
         return licenseProperties.getExcludePaths() != null
                 && licenseProperties.getExcludePaths()
                 .stream()
-                .anyMatch(requestUri::startsWith);
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestUri));
     }
 
     /**

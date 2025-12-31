@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.eu.originalkeen</groupId>
+    <artifactId>originalkeen-license-dependencies</artifactId>
+    <version>1.0.8</version>
+    <packaging>pom</packaging>
+
+    <name>Original Keen License Dependencies</name>
+    <description>
+        Bill of Materials (BOM) for OriginalKeen License. It centralizes dependency management
+        to ensure version consistency and compatibility across all project modules and third-party libraries.
+    </description>
+
+    <properties>
+        <spring-boot.version>3.5.9</spring-boot.version>
+        <truelicense.version>1.33</truelicense.version>
+        <log4j2.version>2.25.3</log4j2.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-spring-boot-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>de.schlichtherle.truelicense</groupId>
+                <artifactId>truelicense-core</artifactId>
+                <version>${truelicense.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${log4j2.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

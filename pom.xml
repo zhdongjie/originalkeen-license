@@ -7,12 +7,17 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.8</version>
     <packaging>pom</packaging>
+
     <name>Original Keen License</name>
-    <description>A Spring Boot library for license management using TrueLicense.</description>
+    <description>
+        Parent POM for the OriginalKeen License project. It defines the global build configuration,
+        plugin management, and release profiles for the entire licensing ecosystem.
+    </description>
     <url>https://github.com/zhdongjie/originalkeen-license</url>
 
+    <!-- ========== License & Developer ========== -->
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -35,46 +40,42 @@
         <url>https://github.com/zhdongjie/originalkeen-license</url>
     </scm>
 
+    <!-- ========== Properties ========== -->
     <properties>
         <java.version>17</java.version>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <originalkeen-license.version>${project.version}</originalkeen-license.version>
         <spring-boot.version>3.5.9</spring-boot.version>
-        <truelicense-core.version>1.33</truelicense-core.version>
-        <log4j2.version>2.25.3</log4j2.version>
-        <originalkeen-license.version>1.0.1</originalkeen-license.version>
-        <originalkeen-license-model.version>1.0.1</originalkeen-license-model.version>
+        <!-- Plugin versions -->
+        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+        <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+        <central-publishing-plugin.version>0.4.0</central-publishing-plugin.version>
     </properties>
 
+    <!-- ========== Modules ========== -->
     <modules>
+        <module>originalkeen-license-dependencies</module>
         <module>originalkeen-license-model</module>
         <module>originalkeen-license-core</module>
         <module>originalkeen-license-spring-boot-autoconfigure</module>
         <module>originalkeen-license-spring-boot-starter</module>
     </modules>
 
+    <!-- ========== Dependency Management (BOM) ========== -->
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.eu.originalkeen</groupId>
-                <artifactId>originalkeen-license-model</artifactId>
-                <version>${originalkeen-license-model.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eu.originalkeen</groupId>
-                <artifactId>originalkeen-license-core</artifactId>
+                <artifactId>originalkeen-license-dependencies</artifactId>
                 <version>${originalkeen-license.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>org.eu.originalkeen</groupId>
-                <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
-                <version>${originalkeen-license.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eu.originalkeen</groupId>
-                <artifactId>originalkeen-license-spring-boot-starter</artifactId>
-                <version>${originalkeen-license.version}</version>
-            </dependency>
+
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
@@ -82,134 +83,119 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <dependency>
-                <groupId>de.schlichtherle.truelicense</groupId>
-                <artifactId>truelicense-core</artifactId>
-                <version>${truelicense-core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-core</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-to-slf4j</artifactId>
-                <version>${log4j2.version}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 
+    <!-- ========== Build ========== -->
     <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Java Compiler -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>${maven-compiler-plugin.version}</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                        <encoding>${project.build.sourceEncoding}</encoding>
+                    </configuration>
+                </plugin>
+                <!-- Version management tool (command-line only) -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>versions-maven-plugin</artifactId>
+                    <version>${versions-maven-plugin.version}</version>
+                    <configuration>
+                        <processAllModules>true</processAllModules>
+                        <updateMatchingVersions>true</updateMatchingVersions>
+                        <updatePropertyVersions>true</updatePropertyVersions>
+                        <generateBackupPoms>false</generateBackupPoms>
+                    </configuration>
+                </plugin>
+                <!-- Source JAR (enabled only for release profile) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>${maven-source-plugin.version}</version>
+                </plugin>
+                <!-- Javadoc JAR (enabled only in release profile) -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${maven-javadoc-plugin.version}</version>
+                    <configuration>
+                        <doclint>none</doclint>
+                        <failOnError>false</failOnError>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+        <!-- Daily builds only enable compilation -->
         <plugins>
-            <!-- 编译插件 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <encoding>UTF-8</encoding>
-                </configuration>
-            </plugin>
-
-            <!-- Source Jar -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.3.0</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <goals>
-                            <goal>jar-no-fork</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Javadoc Jar -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <version>3.6.3</version>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <doclint>none</doclint>
-                    <failOnError>false</failOnError>
-                </configuration>
-            </plugin>
-
-            <!-- GPG签名 -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!-- Spring Boot -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring-boot.version}</version>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-
-            <!-- OSSRH Central 发布 -->
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <version>0.4.0</version>
-                <extensions>true</extensions>
             </plugin>
         </plugins>
     </build>
 
-    <!-- Release Profile -->
+    <!-- ========== Release Profile (Maven Central) ========== -->
     <profiles>
         <profile>
             <id>release</id>
             <build>
                 <plugins>
+                    <!-- attach sources -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-gpg-plugin</artifactId>
+                        <artifactId>maven-source-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>sign-artifacts</id>
-                                <phase>verify</phase>
-                                <goals><goal>sign</goal></goals>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
                             </execution>
                         </executions>
                     </plugin>
 
+                    <!-- attach javadocs -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- GPG sign -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>${maven-gpg-plugin.version}</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!-- Publish to Maven Central -->
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${central-publishing-plugin.version}</version>
+                        <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>central</publishingServerId>
                             <tokenAuth>true</tokenAuth>

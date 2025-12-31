@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.8</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -12,42 +12,23 @@
     <packaging>jar</packaging>
 
     <name>Original Keen License Core</name>
-    <url>https://github.com/zhdongjie/originalkeen-license</url>
-
-    <licenses>
-        <license>
-            <name>The Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <id>originalkeen</id>
-            <name>Zhang Dong Jie</name>
-            <email>zhdongjie@gmail.com</email>
-        </developer>
-    </developers>
-
-    <scm>
-        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
-        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
-        <url>https://github.com/zhdongjie/originalkeen-license</url>
-    </scm>
+    <description>
+        The core engine of the OriginalKeen License system. It contains implementation for
+        hardware-bound licensing, cross-platform hardware detection (Windows/Linux), and license verification services.
+    </description>
 
     <dependencies>
-        <!-- 依赖协议模块 -->
+        <!-- Depends on protocol module -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-model</artifactId>
         </dependency>
-        <!-- License 项目授权 -->
+        <!-- License project authorization -->
         <dependency>
             <groupId>de.schlichtherle.truelicense</groupId>
             <artifactId>truelicense-core</artifactId>
         </dependency>
-        <!-- Log4j2 核心库 -->
+        <!-- Log4j2 core library -->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-core</artifactId>
