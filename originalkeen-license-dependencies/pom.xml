@@ -4,7 +4,7 @@
 
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-dependencies</artifactId>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License Dependencies</name>
@@ -12,11 +12,36 @@
         Bill of Materials (BOM) for OriginalKeen License. It centralizes dependency management
         to ensure version consistency and compatibility across all project modules and third-party libraries.
     </description>
+    <url>https://github.com/zhdongjie/originalkeen-license</url>
+
+    <!-- ========== License & Developer ========== -->
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>originalkeen</id>
+            <name>Zhang Dong Jie</name>
+            <email>zhdongjie@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
+        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
+        <url>https://github.com/zhdongjie/originalkeen-license</url>
+    </scm>
 
     <properties>
         <spring-boot.version>3.5.9</spring-boot.version>
         <truelicense.version>1.33</truelicense.version>
         <log4j2.version>2.25.3</log4j2.version>
+        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -68,4 +93,18 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven-deploy-plugin.version}</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>

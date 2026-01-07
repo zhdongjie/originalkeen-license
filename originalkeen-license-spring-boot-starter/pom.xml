@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.0.8</version>
+        <version>1.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -16,6 +16,30 @@
         The primary entry point for Spring Boot integration. It provides zero-configuration
         setup to enable automated license installation and web-based request enforcement.
     </description>
+    <url>https://github.com/zhdongjie/originalkeen-license</url>
+
+    <!-- ========== License & Developer ========== -->
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>originalkeen</id>
+            <name>Zhang Dong Jie</name>
+            <email>zhdongjie@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
+        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
+        <url>https://github.com/zhdongjie/originalkeen-license</url>
+    </scm>
 
     <dependencies>
         <!-- Automatic configuration module -->
@@ -34,13 +58,6 @@
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-model</artifactId>
-        </dependency>
-
-        <!-- Web support -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-            <optional>true</optional>
         </dependency>
     </dependencies>
 </project>

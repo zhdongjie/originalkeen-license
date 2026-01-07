@@ -5,9 +5,11 @@
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
+    <!-- ===================== Project Coordinates ===================== -->
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.0.8</version>
+    <version>1.1.0</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License</name>
@@ -17,7 +19,7 @@
     </description>
     <url>https://github.com/zhdongjie/originalkeen-license</url>
 
-    <!-- ========== License & Developer ========== -->
+    <!-- ===================== Open Source Information (required for Central) ===================== -->
     <licenses>
         <license>
             <name>The Apache License, Version 2.0</name>
@@ -40,23 +42,23 @@
         <url>https://github.com/zhdongjie/originalkeen-license</url>
     </scm>
 
-    <!-- ========== Properties ========== -->
+    <!-- ===================== Properties ===================== -->
     <properties>
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <originalkeen-license.version>${project.version}</originalkeen-license.version>
-        <spring-boot.version>3.5.9</spring-boot.version>
+
         <!-- Plugin versions -->
-        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-source-plugin.version>3.3.0</maven-source-plugin.version>
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
+        <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
         <central-publishing-plugin.version>0.4.0</central-publishing-plugin.version>
+        <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
+        <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
     </properties>
 
-    <!-- ========== Modules ========== -->
+    <!-- ===================== Modules ===================== -->
     <modules>
         <module>originalkeen-license-dependencies</module>
         <module>originalkeen-license-model</module>
@@ -65,32 +67,25 @@
         <module>originalkeen-license-spring-boot-starter</module>
     </modules>
 
-    <!-- ========== Dependency Management (BOM) ========== -->
+    <!-- ===================== Dependency Management (BOM) ===================== -->
     <dependencyManagement>
         <dependencies>
+            <!-- Import internal BOM for consistent versions across modules -->
             <dependency>
                 <groupId>org.eu.originalkeen</groupId>
                 <artifactId>originalkeen-license-dependencies</artifactId>
-                <version>${originalkeen-license.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
+                <version>${project.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- ========== Build ========== -->
+    <!-- ===================== Build (minimal configuration at parent level) ===================== -->
     <build>
+        <!-- Plugin Management: configure versions but do not execute -->
         <pluginManagement>
             <plugins>
-                <!-- Java Compiler -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -98,61 +93,84 @@
                     <configuration>
                         <source>${java.version}</source>
                         <target>${java.version}</target>
-                        <encoding>${project.build.sourceEncoding}</encoding>
-                    </configuration>
-                </plugin>
-                <!-- Version management tool (command-line only) -->
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>versions-maven-plugin</artifactId>
-                    <version>${versions-maven-plugin.version}</version>
-                    <configuration>
-                        <processAllModules>true</processAllModules>
-                        <updateMatchingVersions>true</updateMatchingVersions>
-                        <updatePropertyVersions>true</updatePropertyVersions>
-                        <generateBackupPoms>false</generateBackupPoms>
-                    </configuration>
-                </plugin>
-                <!-- Source JAR (enabled only for release profile) -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>${maven-source-plugin.version}</version>
-                </plugin>
-                <!-- Javadoc JAR (enabled only in release profile) -->
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>${maven-javadoc-plugin.version}</version>
-                    <configuration>
-                        <doclint>none</doclint>
-                        <failOnError>false</failOnError>
                     </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>
-        <!-- Daily builds only enable compilation -->
+
+        <!-- Enable only necessary plugins -->
         <plugins>
+            <!-- Skip deploy at parent POM level -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <version>${maven-deploy-plugin.version}</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+            <!-- Versions plugin for updating versions across modules -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>versions-maven-plugin</artifactId>
+                <version>${versions-maven-plugin.version}</version>
+                <configuration>
+                    <processAllModules>true</processAllModules>
+                    <updateMatchingVersions>true</updateMatchingVersions>
+                    <updatePropertyVersions>true</updatePropertyVersions>
+                    <generateBackupPoms>false</generateBackupPoms>
+                </configuration>
+            </plugin>
+
+            <!-- Flatten plugin to generate clean POMs for Central -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>${flatten-maven-plugin.version}</version>
+                <executions>
+                    <!-- Flatten POM during process-resources -->
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                        <configuration>
+                            <flattenMode>ossrh</flattenMode>
+                            <updatePomFile>true</updatePomFile>
+                        </configuration>
+                    </execution>
+                    <!-- Clean flattened files -->
+                    <execution>
+                        <id>flatten-clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
 
-    <!-- ========== Release Profile (Maven Central) ========== -->
+    <!-- ===================== Release Profile (Core for Central Deployment) ===================== -->
     <profiles>
         <profile>
             <id>release</id>
+
             <build>
                 <plugins>
-                    <!-- attach sources -->
+
+                    <!-- Attach sources JAR (execute once at parent level) -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
+                        <version>${maven-source-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>attach-sources</id>
+                                <phase>verify</phase>
                                 <goals>
                                     <goal>jar-no-fork</goal>
                                 </goals>
@@ -160,21 +178,27 @@
                         </executions>
                     </plugin>
 
-                    <!-- attach javadocs -->
+                    <!-- Attach Javadoc JAR -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>${maven-javadoc-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>attach-javadocs</id>
+                                <phase>verify</phase>
                                 <goals>
                                     <goal>jar</goal>
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <doclint>none</doclint>
+                            <failOnError>false</failOnError>
+                        </configuration>
                     </plugin>
 
-                    <!-- GPG sign -->
+                    <!-- GPG signing of artifacts -->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
@@ -190,16 +214,25 @@
                         </executions>
                     </plugin>
 
-                    <!-- Publish to Maven Central -->
+                    <!-- Publish to Maven Central (execute only at root) -->
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
                         <version>${central-publishing-plugin.version}</version>
                         <extensions>true</extensions>
+                        <executions>
+                            <execution>
+                                <id>publish-to-central</id>
+                                <phase>deploy</phase>
+                                <goals>
+                                    <goal>publish</goal>
+                                </goals>
+                            </execution>
+                        </executions>
                         <configuration>
-                            <publishingServerId>central</publishingServerId>
-                            <tokenAuth>true</tokenAuth>
                             <autoPublish>true</autoPublish>
+                            <tokenAuth>true</tokenAuth>
+                            <publishingServerId>central</publishingServerId>
                         </configuration>
                     </plugin>
                 </plugins>

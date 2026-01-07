@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.0.8</version>
+        <version>1.1.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -16,6 +16,30 @@
         Spring Boot Auto-configuration for the OriginalKeen License system. It handles
         conditional bean registration for hardware providers, verification services, and security filters.
     </description>
+    <url>https://github.com/zhdongjie/originalkeen-license</url>
+
+    <!-- ========== License & Developer ========== -->
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>originalkeen</id>
+            <name>Zhang Dong Jie</name>
+            <email>zhdongjie@gmail.com</email>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</connection>
+        <developerConnection>scm:git:https://github.com/zhdongjie/originalkeen-license.git</developerConnection>
+        <url>https://github.com/zhdongjie/originalkeen-license</url>
+    </scm>
 
     <dependencies>
         <!-- Spring Boot automatically configures dependencies -->
@@ -66,22 +90,5 @@
             <artifactId>log4j-core</artifactId>
         </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <!-- Spring Boot configuration annotation processor -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.springframework.boot</groupId>
-                            <artifactId>spring-boot-configuration-processor</artifactId>
-                            <version>${spring-boot.version}</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
+
 </project>
