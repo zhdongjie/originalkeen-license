@@ -11,7 +11,7 @@
     <artifactId>originalkeen-license-spring-boot-starter</artifactId>
     <packaging>jar</packaging>
 
-    <name>OriginalKeen License Spring Boot Starter</name>
+    <name>Original Keen License Spring Boot Starter</name>
     <description>
         The primary entry point for Spring Boot integration. It provides zero-configuration
         setup to enable automated license installation and web-based request enforcement.

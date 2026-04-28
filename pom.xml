@@ -214,24 +214,21 @@
                         </executions>
                     </plugin>
 
-                    <!-- Publish to Maven Central (execute only at root) -->
+                    <!--
+                      Standard Sonatype Central configuration:
+                      keep the plugin as an extension and let it inject the publish step
+                      during `mvn deploy`. Do not bind the `publish` goal manually, otherwise
+                      each child module will look like it already owns a publish binding and
+                      the plugin will skip installing its deploy interception features.
+                    -->
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
                         <version>${central-publishing-plugin.version}</version>
                         <extensions>true</extensions>
-                        <executions>
-                            <execution>
-                                <id>publish-to-central</id>
-                                <phase>deploy</phase>
-                                <goals>
-                                    <goal>publish</goal>
-                                </goals>
-                            </execution>
-                        </executions>
                         <configuration>
-                            <autoPublish>true</autoPublish>
                             <publishingServerId>central</publishingServerId>
+                            <autoPublish>true</autoPublish>
                         </configuration>
                     </plugin>
                 </plugins>

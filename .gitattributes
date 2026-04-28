@@ -1,1 +1,39 @@
+* text=auto eol=lf
+
+# Shell scripts must stay LF for WSL/Linux execution
 *.sh text eol=lf
+*.bash text eol=lf
+*.zsh text eol=lf
+
+# Java and build files should stay LF across Windows and WSL
+*.java text eol=lf
+*.kt text eol=lf
+*.groovy text eol=lf
+*.xml text eol=lf
+*.pom text eol=lf
+*.gradle text eol=lf
+*.properties text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.gitignore text eol=lf
+*.gitattributes text eol=lf
+
+# Windows-native scripts can keep CRLF for local usability
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary artifacts should never be normalized
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.jar binary
+*.zip binary
+*.keystore binary
+*.p12 binary
+*.jks binary
+*.pdf binary
