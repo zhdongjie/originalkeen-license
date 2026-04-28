@@ -4,6 +4,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public class IpAddressUtils {
      *   <li>Loopback interfaces</li>
      *   <li>Virtual network interfaces</li>
      *   <li>Interfaces that are not up</li>
-     *   <li>Common container-related interfaces such as Docker, CNI, Flannel</li>
+     *   <li>Common container-related interfaces such as Docker, CNI, and Flannel</li>
      *   <li>Loopback, link-local, and multicast IP addresses</li>
      * </ul>
      *
@@ -50,18 +51,21 @@ public class IpAddressUtils {
      */
     public static List<InetAddress> getLocalAllInetAddress() {
         try {
-            return Collections.list(NetworkInterface.getNetworkInterfaces())
+            Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+
+            return Collections.list(networkInterfaces)
                     .stream()
                     .filter(ni -> {
                         try {
+                            String interfaceName = ni.getName();
                             return !ni.isLoopback()
                                     && !ni.isVirtual()
                                     && ni.isUp()
-                                    // Exclude common virtual / container NICs
-                                    && !ni.getName().startsWith("docker")
-                                    && !ni.getName().startsWith("veth")
-                                    && !ni.getName().startsWith("flannel")
-                                    && !ni.getName().startsWith("cni");
+                                    && (interfaceName == null
+                                    || (!interfaceName.startsWith("docker")
+                                    && !interfaceName.startsWith("veth")
+                                    && !interfaceName.startsWith("flannel")
+                                    && !interfaceName.startsWith("cni")));
                         } catch (SocketException e) {
                             return false;
                         }
@@ -90,31 +94,39 @@ public class IpAddressUtils {
      * and hardware fingerprinting.</p>
      *
      * @param inetAddr the {@link InetAddress} representing a network interface
-     * @return the MAC address in format {@code XX-XX-XX-XX-XX-XX}
-     * @throws RuntimeException if the MAC address cannot be obtained
+     * @return the MAC address in format {@code XX-XX-XX-XX-XX-XX}, or an empty string
+     *         when the address cannot be derived from the network interface metadata
+     * @throws RuntimeException if the network interface metadata cannot be accessed
      */
     public static String getMacByInetAddress(InetAddress inetAddr) {
         try {
-            byte[] mac = NetworkInterface
-                    .getByInetAddress(inetAddr)
-                    .getHardwareAddress();
-
-            StringBuilder builder = new StringBuilder();
-            for (int i = 0; i < mac.length; i++) {
-                if (i > 0) {
-                    builder.append("-");
-                }
-                // Convert byte to hex string
-                String hex = Integer.toHexString(mac[i] & 0xff);
-                if (hex.length() == 1) {
-                    builder.append("0");
-                }
-                builder.append(hex);
+            NetworkInterface networkInterface = NetworkInterface.getByInetAddress(inetAddr);
+            if (networkInterface == null) {
+                return "";
             }
-            return builder.toString().toUpperCase();
+            return formatMacAddress(networkInterface.getHardwareAddress());
         } catch (SocketException e) {
             throw new RuntimeException("Failed to retrieve MAC address", e);
         }
     }
 
+    static String formatMacAddress(byte[] mac) {
+        if (mac == null || mac.length == 0) {
+            return "";
+        }
+
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < mac.length; i++) {
+            if (i > 0) {
+                builder.append("-");
+            }
+
+            String hex = Integer.toHexString(mac[i] & 0xff);
+            if (hex.length() == 1) {
+                builder.append("0");
+            }
+            builder.append(hex);
+        }
+        return builder.toString().toUpperCase();
+    }
 }

@@ -9,24 +9,24 @@ import java.util.stream.Collectors;
 
 /**
  * Abstract base class for hardware information providers.
- * <p>
- * Implements caching for hardware info using double-checked locking to avoid repeated
- * system calls. Subclasses must provide CPU and main-board serial numbers. IP and MAC
- * addresses can be overridden if needed.
- * </p>
+ *
+ * <p>The implementation caches the collected hardware information using
+ * double-checked locking so the expensive operating system calls happen only once.
+ * Subclasses are responsible for the CPU and main-board serial numbers, while the
+ * shared base class handles IP and MAC address collection.</p>
  */
 public abstract class AbstractHardwareProvider implements HardwareDataProvider {
 
     /**
-     * Cached hardware information. Volatile ensures visibility across threads.
+     * Cached hardware information. The {@code volatile} modifier ensures that all
+     * threads observe a fully initialized snapshot once the cache is populated.
      */
     private volatile LicenseCheckModel cachedModel = null;
 
     /**
      * Returns the hardware information of the current machine.
-     * Uses double-checked locking to initialize the cache only once.
      *
-     * @return LicenseCheckModel containing CPU, mainboard, IPs, and MAC addresses
+     * @return {@link LicenseCheckModel} containing CPU, main-board, IP, and MAC data
      */
     @Override
     public LicenseCheckModel getHardwareInfo() {
@@ -47,7 +47,6 @@ public abstract class AbstractHardwareProvider implements HardwareDataProvider {
 
     /**
      * Returns the CPU serial number.
-     * Subclasses must implement this method.
      *
      * @return CPU serial number as a string
      */
@@ -55,7 +54,6 @@ public abstract class AbstractHardwareProvider implements HardwareDataProvider {
 
     /**
      * Returns the main-board serial number.
-     * Subclasses must implement this method.
      *
      * @return main-board serial number as a string
      */
@@ -63,9 +61,8 @@ public abstract class AbstractHardwareProvider implements HardwareDataProvider {
 
     /**
      * Returns all local IP addresses of the machine.
-     * Can be overridden by subclasses if custom behavior is needed.
      *
-     * @return list of IP addresses in lowercase
+     * @return list of distinct IP addresses in lowercase form
      */
     protected List<String> getIpAddress() {
         List<InetAddress> inetAddresses = IpAddressUtils.getLocalAllInetAddress();
@@ -78,14 +75,17 @@ public abstract class AbstractHardwareProvider implements HardwareDataProvider {
 
     /**
      * Returns all MAC addresses of the machine.
-     * Can be overridden by subclasses if custom behavior is needed.
      *
-     * @return list of MAC addresses
+     * <p>Blank values are filtered out because some environments expose a usable IP
+     * address but do not provide a hardware address for the associated interface.</p>
+     *
+     * @return list of distinct MAC addresses
      */
     protected List<String> getMacAddress() {
         List<InetAddress> inetAddresses = IpAddressUtils.getLocalAllInetAddress();
         return inetAddresses.stream()
                 .map(IpAddressUtils::getMacByInetAddress)
+                .filter(mac -> !mac.isBlank())
                 .distinct()
                 .collect(Collectors.toList());
     }

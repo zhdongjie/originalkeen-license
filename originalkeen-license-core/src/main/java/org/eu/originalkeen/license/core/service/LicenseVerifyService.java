@@ -6,8 +6,6 @@ import org.eu.originalkeen.license.core.manager.LicenseManagerAdapter;
 import org.eu.originalkeen.license.model.LicenseCheckModel;
 
 import java.io.File;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -41,23 +39,29 @@ public class LicenseVerifyService {
 
     private final LicenseManagerAdapter licenseManager;
 
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
+
+    /**
+     * Timestamp of the last successful verification.
+     *
+     * <p>The cache stores only successful checks. A failure always clears the
+     * timestamp so the next caller performs a real verification attempt.</p>
+     */
+    private volatile long lastSuccessTimestamp = 0;
+
+    /**
+     * Cache duration for successful verifications.
+     */
+    private static final long CACHE_DURATION_MS = 60 * 1000L;
+
     public LicenseVerifyService(LicenseManagerAdapter licenseManager) {
         this.licenseManager = licenseManager;
     }
 
-    private final ReadWriteLock lock = new ReentrantReadWriteLock();
-
-    // Cache the timestamp of last successful verification
-    private volatile long lastSuccessTimestamp = 0;
-    // Cache duration 60 seconds
-    private static final long CACHE_DURATION_MS = 60 * 1000L;
-    // Async refresh flag
-    private final AtomicBoolean refreshing = new AtomicBoolean(false);
-
     /**
-     * Install the license
+     * Install the license.
      *
-     * @param licensePath path to license file
+     * @param licensePath path to the license file
      */
     public synchronized void install(String licensePath) {
         log.info("Start installing License. Path: {}", licensePath);
@@ -67,15 +71,19 @@ public class LicenseVerifyService {
             licenseManager.uninstall();
             licenseManager.install(new File(licensePath));
             log.info("License installed successfully");
-            // Reset cache after successful installation
+
+            // Clear the cache because the installed license content has changed.
             lastSuccessTimestamp = 0;
         } catch (Exception e) {
             log.error("License installation failed", e);
-            // Optionally log current hardware info to help troubleshoot mismatches
+
+            // Log the current hardware snapshot to help diagnose binding mismatches.
             try {
                 LicenseCheckModel currentHardware = licenseManager.getServerHardwareInfo();
                 log.info("Installation failed, current server hardware info: {}", currentHardware);
-            } catch (Exception ex) { /* ignore */ }
+            } catch (Exception ex) {
+                log.debug("Failed to collect hardware information after installation failure", ex);
+            }
             throw new RuntimeException("License installation failed: " + e.getMessage(), e);
         } finally {
             lock.writeLock().unlock();
@@ -83,50 +91,32 @@ public class LicenseVerifyService {
     }
 
     /**
-     * Verify the license
+     * Verify the license.
      *
      * <p>This method caches successful verifications for a short duration to
      * reduce overhead. If verification fails, the failure is not cached and
      * will be retried on the next call.</p>
      *
-     * <p>High concurrency support:
-     * if a verification is in progress asynchronously, other threads will
-     * optimistically assume success and avoid blocking.</p>
-     *
-     * @return true if license is valid, false otherwise
+     * @return {@code true} if the license is valid, otherwise {@code false}
      */
     public boolean verify() {
         long now = System.currentTimeMillis();
-
-        // Return cached success if within duration
-        if (lastSuccessTimestamp > 0 && (now - lastSuccessTimestamp) < CACHE_DURATION_MS) {
+        if (isCacheValid(now)) {
             return true;
         }
 
-        // Async refresh: if no refresh in progress, start one
-        if (refreshing.compareAndSet(false, true)) {
-            CompletableFuture.runAsync(() -> {
-                lock.readLock().lock();
-                try {
-                    licenseManager.verify();
-                    lastSuccessTimestamp = System.currentTimeMillis();
-                } catch (Exception e) {
-                    log.warn("License verification failed asynchronously: {}", e.getMessage());
-                    lastSuccessTimestamp = 0;
-                } finally {
-                    lock.readLock().unlock();
-                    refreshing.set(false);
-                }
-            });
-            // Optimistically allow the request to pass
-            return true;
-        }
-
-        // Normal synchronous verification (blocking)
         lock.readLock().lock();
         try {
+            /*
+             * Another thread may have refreshed the cache while this thread was waiting
+             * for the lock, so check the timestamp again before calling the manager.
+             */
+            if (isCacheValid(System.currentTimeMillis())) {
+                return true;
+            }
+
             licenseManager.verify();
-            lastSuccessTimestamp = now;
+            lastSuccessTimestamp = System.currentTimeMillis();
             return true;
         } catch (Exception e) {
             log.debug("License verification failed: {}", e.getMessage());
@@ -137,4 +127,7 @@ public class LicenseVerifyService {
         }
     }
 
+    private boolean isCacheValid(long now) {
+        return lastSuccessTimestamp > 0 && (now - lastSuccessTimestamp) < CACHE_DURATION_MS;
+    }
 }

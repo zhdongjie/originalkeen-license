@@ -9,7 +9,7 @@
     <!-- ===================== Project Coordinates ===================== -->
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License</name>
@@ -53,7 +53,7 @@
         <maven-javadoc-plugin.version>3.6.3</maven-javadoc-plugin.version>
         <maven-gpg-plugin.version>3.1.0</maven-gpg-plugin.version>
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
-        <central-publishing-plugin.version>0.4.0</central-publishing-plugin.version>
+        <central-publishing-plugin.version>0.9.0</central-publishing-plugin.version>
         <maven-deploy-plugin.version>3.1.1</maven-deploy-plugin.version>
         <versions-maven-plugin.version>2.16.2</versions-maven-plugin.version>
     </properties>
@@ -137,7 +137,7 @@
                             <goal>flatten</goal>
                         </goals>
                         <configuration>
-                            <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                            <flattenMode>ossrh</flattenMode>
                             <updatePomFile>true</updatePomFile>
                         </configuration>
                     </execution>

@@ -1,0 +1,41 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <!--
+      Copy this file to your Maven config directory, for example:
+      /usr/local/apache-maven-3.9.6/conf/settings-gpg.xml
+
+      This template extends settings.xml.example by adding the GPG properties
+      required for signed releases.
+
+      Recommended environment variables:
+      export CENTRAL_TOKEN_USERNAME="your-central-token-username"
+      export CENTRAL_TOKEN_PASSWORD="your-central-token-password"
+      export GPG_KEY_ID="ABCD1234EF567890"
+      export GPG_PASSPHRASE="your-passphrase"
+    -->
+
+    <servers>
+        <server>
+            <id>central</id>
+            <username>${env.CENTRAL_TOKEN_USERNAME}</username>
+            <password>${env.CENTRAL_TOKEN_PASSWORD}</password>
+        </server>
+    </servers>
+
+    <profiles>
+        <profile>
+            <id>gpg</id>
+            <properties>
+                <gpg.executable>gpg</gpg.executable>
+                <gpg.keyname>${env.GPG_KEY_ID}</gpg.keyname>
+                <gpg.passphrase>${env.GPG_PASSPHRASE}</gpg.passphrase>
+            </properties>
+        </profile>
+    </profiles>
+
+    <activeProfiles>
+        <activeProfile>gpg</activeProfile>
+    </activeProfiles>
+</settings>

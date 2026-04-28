@@ -26,11 +26,10 @@ import java.util.prefs.Preferences;
  *
  * <p>Beans provided include:</p>
  * <ul>
- *     <li>{@link HardwareDataProvider} – default OS-specific provider</li>
- *     <li>{@link LicenseParam} – license parameters configured from {@link LicenseProperties}</li>
- *     <li>{@link LicenseManagerAdapter} – encapsulates license creation, installation, and verification</li>
- *     <li>{@link LicenseVerifyService} – service API for license installation and verification</li>
- *     <li>{@link LicenseFilter} – web filter for HTTP request license enforcement</li>
+ *   <li>{@link HardwareDataProvider} as the default OS-specific provider</li>
+ *   <li>{@link LicenseParam} with values mapped from {@link LicenseProperties}</li>
+ *   <li>{@link LicenseManagerAdapter} as the bridge to TrueLicense and hardware checks</li>
+ *   <li>{@link LicenseVerifyService} as the thread-safe install and verify facade</li>
  * </ul>
  *
  * <p>This configuration is automatically enabled when the application
@@ -43,10 +42,9 @@ public class LicenseAutoConfiguration {
 
     /**
      * Provides a default {@link HardwareDataProvider} bean if none is defined.
-     * The implementation is chosen based on the underlying OS.
-     * Windows -> {@link WindowsHardwareProvider}, others -> {@link LinuxHardwareProvider}.
+     * The implementation is chosen based on the underlying operating system.
      *
-     * @return OS-specific hardware data provider
+     * @return operating-system-specific hardware data provider
      */
     @Bean
     @ConditionalOnMissingBean(HardwareDataProvider.class)
@@ -57,17 +55,15 @@ public class LicenseAutoConfiguration {
 
     /**
      * Provides a default {@link LicenseParam} bean if none is defined.
-     * Initializes the license parameters using {@link LicenseProperties}.
      *
-     * @param properties License configuration properties
-     * @return {@link LicenseParam} instance
+     * @param properties license configuration properties
+     * @return configured {@link LicenseParam} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseParam.class)
     public LicenseParam licenseParam(LicenseProperties properties) {
         Preferences preferences = Preferences.userNodeForPackage(LicenseVerifyService.class);
 
-        // Define the public key store parameter
         FileKeyStoreParam publicStoreParam = new FileKeyStoreParam(
                 LicenseVerifyService.class,
                 properties.getPublicKeyStorePath(),
@@ -76,7 +72,6 @@ public class LicenseAutoConfiguration {
                 null
         );
 
-        // Create default license parameter
         return new DefaultLicenseParam(
                 properties.getSubject(),
                 preferences,
@@ -87,11 +82,10 @@ public class LicenseAutoConfiguration {
 
     /**
      * Provides a default {@link LicenseManagerAdapter} bean if none is defined.
-     * Binds {@link LicenseParam} and {@link HardwareDataProvider} together.
      *
      * @param licenseParam the license parameter
      * @param provider the hardware data provider
-     * @return {@link LicenseManagerAdapter} instance
+     * @return configured {@link LicenseManagerAdapter} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseManagerAdapter.class)
@@ -104,28 +98,13 @@ public class LicenseAutoConfiguration {
 
     /**
      * Provides a default {@link LicenseVerifyService} bean if none is defined.
-     * Encapsulates license installation and verification logic.
      *
      * @param licenseManagerAdapter the license manager adapter
-     * @return {@link LicenseVerifyService} instance
+     * @return configured {@link LicenseVerifyService} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseVerifyService.class)
     public LicenseVerifyService licenseVerifyService(LicenseManagerAdapter licenseManagerAdapter) {
         return new LicenseVerifyService(licenseManagerAdapter);
     }
-
-    /**
-     * Provides a {@link LicenseFilter} bean for web request license verification.
-     * Users can override this filter by providing their own {@link LicenseFilter} bean.
-     *
-     * @param service the license verification service
-     * @param properties license configuration properties
-     * @return {@link LicenseFilter} instance
-     */
-    @Bean
-    public LicenseFilter licenseFilter(LicenseVerifyService service, LicenseProperties properties) {
-        return new LicenseFilter(service, properties);
-    }
-
 }

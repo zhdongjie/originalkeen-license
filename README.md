@@ -1,38 +1,26 @@
 # OriginalKeen License
 
-**OriginalKeen License** is a sophisticated **Java license management and verification system** designed for enterprise-grade applications. It provides a robust framework for hardware-bound licensing, automated installation, and seamless integration with the Spring Boot ecosystem.
-
-This project follows a modular architecture and utilizes the **BOM (Bill of Materials)** pattern to ensure dependency consistency and simplified version management.
-
----
+**OriginalKeen License** is a Java license management and verification system for enterprise applications. It provides hardware-bound licensing, automated installation, and Spring Boot integration through a Maven multi-module architecture.
 
 ## Key Features
 
-* **Hardware Fingerprinting**: Bind licenses to specific hardware identifiers, including CPU ID, motherboard serial number, IP addresses, and MAC addresses.
-* **Expiration Management**: Integrated lifecycle monitoring with automated warnings 15 days prior to license expiration.
-* **Web Request Enforcement**: High-performance Web Interceptor support with configurable Ant-style path whitelisting.
-* **Cross-Platform Compatibility**: Native support for both Windows and Linux environments.
-* **Verification Caching**: Optimized performance through an internal cache (default 60s) for successful verification results.
-
----
+- Hardware fingerprinting for CPU, motherboard, IP, and MAC address binding
+- License expiration monitoring with advanced warning support
+- Web request interception with configurable path exclusions
+- Cross-platform support for Windows and Linux
+- Internal verification cache for improved runtime performance
 
 ## Module Overview
 
-The project is organized into five specialized modules:
-
-1. **`originalkeen-license-dependencies` (BOM)**: The **Single Source of Truth**. Centralizes version definitions for all internal modules and third-party dependencies to prevent version conflicts.
-2. **`originalkeen-license-model`**: Defines the core data models and constants for the license protocol.
-3. **`originalkeen-license-core`**: The engine of the system, providing hardware detection, license installation, and verification logic.
-4. **`originalkeen-license-spring-boot-autoconfigure`**: Handles automated registration of Spring beans based on the application environment.
-5. **`originalkeen-license-spring-boot-starter`**: The primary entry point for users, offering zero-configuration integration for Spring Boot applications.
-
----
+1. `originalkeen-license-dependencies`: Internal BOM used to align dependency versions.
+2. `originalkeen-license-model`: Shared protocol models and constants.
+3. `originalkeen-license-core`: Core licensing engine and hardware detection logic.
+4. `originalkeen-license-spring-boot-autoconfigure`: Spring Boot auto-configuration module.
+5. `originalkeen-license-spring-boot-starter`: End-user starter dependency.
 
 ## Quick Start
 
 ### 1. Import the BOM
-
-To ensure version alignment, import the BOM in your project's `dependencyManagement` section:
 
 ```xml
 <dependencyManagement>
@@ -40,7 +28,7 @@ To ensure version alignment, import the BOM in your project's `dependencyManagem
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>${project.version}</version>
+            <version>1.1.2</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -61,8 +49,6 @@ To ensure version alignment, import the BOM in your project's `dependencyManagem
 
 ### 3. Configure License Properties
 
-Set your license-related properties in `application.yml`:
-
 ```yaml
 originalkeen:
   license:
@@ -78,52 +64,30 @@ originalkeen:
       - /actuator/**
 ```
 
----
+## Release Guide
 
-## Development & Release Workflow
+This project publishes to Maven Central through the Sonatype Central Portal Maven plugin.
 
-This project follows a standardized Maven multi-module release process. **Directly modifying versions in sub-module `pom.xml` files is prohibited.**
+- Full release guide: [docs/release/README.md](docs/release/README.md)
+- Base Maven settings example: [docs/release/settings.xml.example](docs/release/settings.xml.example)
+- Maven settings with GPG: [docs/release/settings-gpg.xml.example](docs/release/settings-gpg.xml.example)
+- Preflight check script: [scripts/check-release.sh](scripts/check-release.sh)
+- Release script: [scripts/release.sh](scripts/release.sh)
 
-### Standard Release Steps
-1. **Develop**: Implement features and tests.
-2. **Version Update**: Sync all module versions (including BOM):
+Project-specific release rules:
 
-```bash
-mvn versions:set -DnewVersion=1.0.2
-```
-
-3. **Confirm Changes**: Verify all modules, then commit:
-
-```bash
-mvn versions:commit
-```
-
-4. **Rollback Version (if needed)**:
-   If you need to revert to the previous version, run:
-   > ⚠️ `versions:revert` only reverts the most recent change made by `versions:set`, and requires a new commit after the rollback.
-```bash
-mvn versions:revert
-```
-
-* This will undo the last `versions:set` command.
-* Useful if tests fail or release preparation needs to be canceled.
-
-5. **Deploy**: Run the release profile for GPG signing and deployment:
-
-```bash
-mvn clean deploy -Prelease
-```
-
----
+- Always release from the root parent project.
+- Use `mvn versions:set -DnewVersion=...` to change versions consistently.
+- Child modules currently keep explicit `groupId` and `version` so Central can parse coordinates reliably for this project.
+- `flatten-maven-plugin` is intentionally enabled for publishing compatibility; do not remove it casually.
+- `.flattened-pom.xml` files are build artifacts and should not be committed.
 
 ## Important Notes
 
-* **System Privileges**: Extracting CPU or motherboard serial numbers on Linux may require `root` or elevated administrative privileges.
-* **GPG Signing**: Ensure your `gpg-agent` is running and the signing key is unlocked before initiating a release.
-* **Inheritance**: Sub-module versions are managed by the Parent POM and the internal BOM. Manual version declarations in sub-modules are unnecessary.
-
----
+- Linux hardware information collection may require elevated privileges depending on the deployment environment.
+- Maven Central releases require sources, javadocs, and GPG signatures.
+- If IntelliJ shows `central-publishing-maven-plugin` in red but WSL Maven can build and deploy, the usual cause is IDE-side Maven resolution rather than an invalid POM.
 
 ## License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the Apache License 2.0.

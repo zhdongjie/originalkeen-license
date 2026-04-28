@@ -1,6 +1,11 @@
 package org.eu.originalkeen.license.core.manager;
 
-import de.schlichtherle.license.*;
+import de.schlichtherle.license.LicenseContent;
+import de.schlichtherle.license.LicenseContentException;
+import de.schlichtherle.license.LicenseManager;
+import de.schlichtherle.license.LicenseNotary;
+import de.schlichtherle.license.LicenseParam;
+import de.schlichtherle.license.NoLicenseInstalledException;
 import de.schlichtherle.xml.GenericCertificate;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -30,7 +35,7 @@ import java.util.stream.Collectors;
  * <p>Responsibilities of this adapter include:</p>
  * <ul>
  *   <li>Creating, installing, and verifying license keys</li>
- *   <li>Performing native TrueLicense validations (time, signature, integrity)</li>
+ *   <li>Performing native TrueLicense validations such as time, signature, and integrity checks</li>
  *   <li>Validating hardware constraints such as IP address, MAC address,
  *       motherboard serial, and CPU serial</li>
  *   <li>Providing early warnings when a license is close to expiration</li>
@@ -50,15 +55,16 @@ import java.util.stream.Collectors;
  * @see LicenseCheckModel
  */
 public class LicenseManagerAdapter extends LicenseManager {
+
     private static final Logger log = LogManager.getLogger(LicenseManagerAdapter.class);
 
     private final HardwareDataProvider hardwareDataProvider;
 
     /**
-     * Constructor for LicenseManagerAdapter
+     * Constructs the adapter with the given TrueLicense parameters and hardware provider.
      *
-     * @param param                 License parameters
-     * @param hardwareDataProvider  Hardware data provider
+     * @param param license parameters
+     * @param hardwareDataProvider hardware data provider
      */
     public LicenseManagerAdapter(LicenseParam param, HardwareDataProvider hardwareDataProvider) {
         super(param);
@@ -66,21 +72,21 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Get the server's hardware information
+     * Returns the hardware information collected from the current server.
      *
-     * @return LicenseCheckModel containing hardware info
+     * @return hardware snapshot for the current server
      */
     public LicenseCheckModel getServerHardwareInfo() {
         return hardwareDataProvider.getHardwareInfo();
     }
 
     /**
-     * Create a license key from LicenseContent
+     * Creates a license key from the provided content.
      *
-     * @param content License content
-     * @param notary  License notary
-     * @return byte array of license key
-     * @throws Exception any creation exception
+     * @param content license content
+     * @param notary license notary
+     * @return encoded license key bytes
+     * @throws Exception if the license cannot be created
      */
     @Override
     protected synchronized byte[] create(LicenseContent content, LicenseNotary notary) throws Exception {
@@ -91,12 +97,12 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Install a license key
+     * Installs a license key.
      *
-     * @param key    license key bytes
+     * @param key license key bytes
      * @param notary license notary
-     * @return LicenseContent after installation
-     * @throws Exception any installation exception
+     * @return validated license content after installation
+     * @throws Exception if installation fails
      */
     @Override
     protected synchronized LicenseContent install(byte[] key, LicenseNotary notary) throws Exception {
@@ -110,16 +116,16 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Verify the installed license
+     * Verifies the installed license.
      *
      * @param notary license notary
-     * @return LicenseContent after verification
-     * @throws Exception any verification exception
+     * @return validated license content after verification
+     * @throws Exception if verification fails
      */
     @Override
     protected synchronized LicenseContent verify(LicenseNotary notary) throws Exception {
         byte[] key = getLicenseKey();
-        if (null == key) {
+        if (key == null) {
             throw new NoLicenseInstalledException(getLicenseParam().getSubject());
         }
         GenericCertificate certificate = getPrivacyGuard().key2cert(key);
@@ -131,76 +137,82 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Validate the license content during creation
+     * Validates the license content during creation.
      *
-     * @param content LicenseContent
-     * @throws LicenseContentException if invalid
+     * @param content license content
+     * @throws LicenseContentException if the content is invalid
      */
     protected synchronized void validateCreate(LicenseContent content) throws LicenseContentException {
         Date now = new Date();
         Date notBefore = content.getNotBefore();
         Date notAfter = content.getNotAfter();
-        if (null != notAfter && now.after(notAfter)) {
+        if (notAfter != null && now.after(notAfter)) {
             throw new LicenseContentException("License has expired");
         }
-        if (null != notBefore && null != notAfter && notAfter.before(notBefore)) {
+        if (notBefore != null && notAfter != null && notAfter.before(notBefore)) {
             throw new LicenseContentException("License start date cannot be after expiration date");
         }
     }
 
     /**
-     * Validate the license content during verification
+     * Validates the license content during verification.
      *
-     * @param content LicenseContent
+     * @param content license content
      * @throws LicenseContentException if validation fails
      */
     @Override
     protected synchronized void validate(LicenseContent content) throws LicenseContentException {
-        // 1. True license native validation (time, signature, etc.)
+        // First run the native TrueLicense validation chain.
         super.validate(content);
 
-        // 2. Read hardware info bound in License
+        // Then validate the custom hardware bindings stored in the license.
         LicenseCheckModel expected = getExpected(content);
-
-        // 3. Read current server hardware info
         LicenseCheckModel current = getCurrent();
 
-        // 4. Validate hardware rules
         validateIp(expected, current);
         validateMac(expected, current);
         validateMainBoard(expected, current);
         validateCpu(expected, current);
 
-        // 5. Warn if license is about to expire
         warnIfAboutToExpire(content);
     }
 
     /**
-     * Load LicenseContent from encoded XML string
+     * Loads {@link LicenseContent} from the encoded XML payload stored in the certificate.
      *
      * @param encoded XML encoded string
      * @return deserialized object
      */
     private Object load(String encoded) {
         try (
-                BufferedInputStream inputStream = new BufferedInputStream(new ByteArrayInputStream(encoded.getBytes(LicenseConstants.XML_CHARSET)));
-                XMLDecoder decoder = new XMLDecoder(new BufferedInputStream(inputStream, LicenseConstants.DEFAULT_BUFF_SIZE), null, null)
+                BufferedInputStream inputStream = new BufferedInputStream(
+                        new ByteArrayInputStream(encoded.getBytes(LicenseConstants.XML_CHARSET))
+                );
+                XMLDecoder decoder = new XMLDecoder(
+                        new BufferedInputStream(inputStream, LicenseConstants.DEFAULT_BUFF_SIZE),
+                        null,
+                        null
+                )
         ) {
             return decoder.readObject();
         } catch (UnsupportedEncodingException e) {
-            log.error("XML Charset unsupported", e);
+            log.error("Configured XML charset is not supported", e);
+            throw new IllegalStateException(
+                    "Failed to decode license content because the configured XML charset is unsupported",
+                    e
+            );
         } catch (Exception e) {
-            log.error("XML Decode failed", e);
+            log.error("Failed to decode license content from certificate payload", e);
+            throw new IllegalStateException("Failed to decode license content from the certificate payload", e);
         }
-        return null;
     }
 
     /**
-     * Extract expected hardware info from license content
+     * Extracts the expected hardware information from the license content.
      *
-     * @param content LicenseContent
-     * @return LicenseCheckModel
-     * @throws LicenseContentException if not present
+     * @param content license content
+     * @return hardware snapshot embedded in the license
+     * @throws LicenseContentException if the license does not contain hardware information
      */
     private LicenseCheckModel getExpected(LicenseContent content) throws LicenseContentException {
         Object extra = content.getExtra();
@@ -211,10 +223,10 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Get current server hardware info
+     * Returns the current server hardware information.
      *
-     * @return LicenseCheckModel
-     * @throws LicenseContentException if you cannot get
+     * @return current server hardware snapshot
+     * @throws LicenseContentException if the hardware information cannot be obtained
      */
     private LicenseCheckModel getCurrent() throws LicenseContentException {
         LicenseCheckModel current = hardwareDataProvider.getHardwareInfo();
@@ -237,19 +249,19 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Check if current list does not match expected list
+     * Checks whether the current list does not match the expected list.
      *
-     * @param expectedList expected values
-     * @param currentList  current values
-     * @return true if not match, false if match
+     * @param expectedList expected values from the license
+     * @param currentList current values collected from the server
+     * @return {@code true} when no value matches, otherwise {@code false}
      */
     private boolean isNotMatched(List<String> expectedList, List<String> currentList) {
-        // License rule not bound → treat as match
+        // If the license does not bind this hardware attribute, skip the check.
         if (expectedList == null || expectedList.isEmpty()) {
             return false;
         }
 
-        // Cannot get current values → treat as mismatch
+        // If the runtime value cannot be collected, treat it as a verification failure.
         if (currentList == null || currentList.isEmpty()) {
             return true;
         }
@@ -258,12 +270,12 @@ public class LicenseManagerAdapter extends LicenseManager {
                 .map(s -> s.trim().toLowerCase())
                 .collect(Collectors.toSet());
 
-        // Any current value matches expected → match
+        // A single matching runtime value is enough to satisfy the binding rule.
         boolean matched = currentList.stream()
                 .map(s -> s.trim().toLowerCase())
                 .anyMatch(expectedSet::contains);
 
-        return !matched; // true = not match
+        return !matched;
     }
 
     private void validateMainBoard(LicenseCheckModel expected, LicenseCheckModel current) throws LicenseContentException {
@@ -279,14 +291,14 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Check if serial number does not match
+     * Checks whether the current serial number matches the expected one.
      *
-     * @param expected expected serial
-     * @param current  current serial
-     * @return true if not match, false if match
+     * @param expected expected serial number from the license
+     * @param current current serial number collected from the server
+     * @return {@code true} when the serial does not match, otherwise {@code false}
      */
     private boolean serialNotMatch(String expected, String current) {
-        // License not bound → treat as match
+        // If the license does not bind this serial number, skip the check.
         if (expected == null || expected.isBlank()) {
             return false;
         }
@@ -294,9 +306,9 @@ public class LicenseManagerAdapter extends LicenseManager {
     }
 
     /**
-     * Warn if license is about to expire
+     * Logs a warning when the license is close to expiration.
      *
-     * @param content LicenseContent
+     * @param content license content
      */
     private void warnIfAboutToExpire(LicenseContent content) {
         Date notAfter = content.getNotAfter();
@@ -312,5 +324,4 @@ public class LicenseManagerAdapter extends LicenseManager {
             log.warn("=====================================================");
         }
     }
-
 }

@@ -4,10 +4,10 @@ import org.eu.originalkeen.license.core.constant.LicenseConstants;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 /**
@@ -27,15 +27,13 @@ import java.util.List;
  * </ul>
  *
  * <p>The class implements {@link InitializingBean} to perform
- * <b>fail-fast validation</b> after property binding, ensuring
- * that required license configuration is present when the
- * license feature is enabled.</p>
+ * fail-fast validation after property binding, ensuring that
+ * the public keystore settings required for runtime verification
+ * are present when the license feature is enabled.</p>
  *
- * <p>If license verification is disabled via configuration,
- * validation will be skipped entirely.</p>
- *
- * <p>This design ensures that misconfiguration is detected
- * early during application startup rather than at runtime.</p>
+ * <p>Startup installation intentionally handles {@code licensePath}
+ * more leniently so an application can still boot and log a warning
+ * when the license file is mounted later or installed by another process.</p>
  *
  * @author Original Keen
  */
@@ -44,37 +42,21 @@ public class LicenseProperties implements InitializingBean {
 
     /**
      * Whether license verification is globally enabled.
-     *
-     * <p>If set to {@code false}, the license system will be
-     * completely disabled and no validation will be performed.</p>
-     *
-     * <p>Default value: {@code true}</p>
      */
     private boolean enabled = true;
 
     /**
      * Whether web-layer license verification is enabled.
-     *
-     * <p>This flag controls whether HTTP requests will be
-     * intercepted by the license filter.</p>
-     *
-     * <p>Only effective in servlet-based web applications.</p>
-     *
-     * <p>Default value: {@code true}</p>
      */
     private boolean webEnabled = true;
 
     /**
      * License subject used to identify the license.
-     *
-     * <p>This value must match the subject used when
-     * generating the license.</p>
      */
     private String subject;
 
     /**
-     * Absolute or relative path to the license file provided
-     * by the user.
+     * Absolute or relative path to the license file provided by the user.
      */
     private String licensePath;
 
@@ -95,40 +77,19 @@ public class LicenseProperties implements InitializingBean {
 
     /**
      * URL path patterns excluded from license interception.
-     *
-     * <p>Supports Ant-style path patterns, for example:</p>
-     * <ul>
-     *   <li>{@code /login}</li>
-     *   <li>{@code /actuator/**}</li>
-     * </ul>
-     *
-     * <p>Typically used for health checks, login endpoints,
-     * or public APIs.</p>
      */
     private List<String> excludePaths = new ArrayList<>();
 
     /**
-     * Validates required license properties after Spring
-     * finishes property binding.
-     *
-     * <p>This method performs fail-fast validation to ensure
-     * that all mandatory license configuration is present
-     * when license verification is enabled.</p>
-     *
-     * <p>If {@link #enabled} is set to {@code false},
-     * validation is skipped entirely.</p>
-     *
-     * @throws IllegalArgumentException if required properties
-     *                                  are missing or empty
+     * Validates required license properties after Spring finishes property binding.
      */
     @Override
     public void afterPropertiesSet() {
-        // Skip validation if license verification is disabled
         if (!enabled) {
+            setDefaultExcludePaths();
             return;
         }
 
-        // Validate required properties
         Assert.hasText(
                 subject,
                 "License is enabled (enabled=true), but license.subject is not configured"
@@ -145,16 +106,14 @@ public class LicenseProperties implements InitializingBean {
                 publicPassword,
                 "License is enabled (enabled=true), but publicPassword is not configured"
         );
-        Assert.hasText(
-                licensePath,
-                "License is enabled (enabled=true), but license path is not configured"
-        );
-        Assert.isTrue(
-                Files.exists(Paths.get(licensePath)),
-                "License is enabled (enabled=true), but license file does not exist"
-        );
-        // Ensure excludePaths is never null
-        this.setDefaultExcludePaths();
+
+        /*
+         * Do not fail fast on licensePath here.
+         * Startup installation is allowed to degrade into a warning-and-skip flow
+         * so applications can still boot in environments where the license is
+         * mounted later or installation is handled by another process.
+         */
+        setDefaultExcludePaths();
     }
 
     public boolean isEnabled() {
@@ -222,9 +181,14 @@ public class LicenseProperties implements InitializingBean {
     }
 
     public void setDefaultExcludePaths() {
-        if (excludePaths == null) {
-            excludePaths = new ArrayList<>();
+        LinkedHashSet<String> mergedPaths = new LinkedHashSet<>();
+        if (excludePaths != null) {
+            excludePaths.stream()
+                    .filter(StringUtils::hasText)
+                    .map(String::trim)
+                    .forEach(mergedPaths::add);
         }
-        this.excludePaths.addAll(LicenseConstants.DEFAULT_EXCLUDE_PATHS);
+        mergedPaths.addAll(LicenseConstants.DEFAULT_EXCLUDE_PATHS);
+        this.excludePaths = new ArrayList<>(mergedPaths);
     }
 }
