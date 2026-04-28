@@ -7,7 +7,8 @@
 - Hardware fingerprinting for CPU, motherboard, IP, and MAC address binding
 - License expiration monitoring with advanced warning support
 - Web request interception with configurable path exclusions
-- Cross-platform support for Windows and Linux
+- Runtime verification support for Windows and Linux
+- Client information collection scripts for Windows, Linux, and macOS
 - Internal verification cache for improved runtime performance
 
 ## Module Overview
@@ -28,7 +29,7 @@
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>1.1.2</version>
+            <version>1.1.4</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -81,6 +82,34 @@ Project-specific release rules:
 - Child modules currently keep explicit `groupId` and `version` so Central can parse coordinates reliably for this project.
 - `flatten-maven-plugin` is intentionally enabled for publishing compatibility; do not remove it casually.
 - `.flattened-pom.xml` files are build artifacts and should not be committed.
+
+## Client Information Collection
+
+This project provides ready-to-use client information collection scripts for license issuance.
+
+- Full script guide: [scripts/client-info/README.md](scripts/client-info/README.md)
+- Linux script: [scripts/client-info/collect-client-info-linux.sh](scripts/client-info/collect-client-info-linux.sh)
+- macOS script: [scripts/client-info/collect-client-info-macos.sh](scripts/client-info/collect-client-info-macos.sh)
+- Windows script: [scripts/client-info/collect-client-info-windows.ps1](scripts/client-info/collect-client-info-windows.ps1)
+
+These scripts generate JSON that matches the current `LicenseCheckModel` fields directly:
+
+- `protocolVersion`
+- `ipAddress`
+- `macAddress`
+- `cpuSerial`
+- `mainBoardSerial`
+
+Quick examples:
+
+```bash
+bash scripts/client-info/collect-client-info-linux.sh
+bash scripts/client-info/collect-client-info-macos.sh
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\client-info\collect-client-info-windows.ps1
+```
 
 ## Important Notes
 
