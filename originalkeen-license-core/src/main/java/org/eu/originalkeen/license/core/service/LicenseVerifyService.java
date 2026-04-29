@@ -6,6 +6,8 @@ import org.eu.originalkeen.license.core.manager.LicenseManagerAdapter;
 import org.eu.originalkeen.license.model.LicenseCheckModel;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -17,6 +19,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * <ul>
  *   <li>Read-write locking to protect concurrent install and verify operations</li>
  *   <li>A short-term success cache to reduce verification overhead on hot paths</li>
+ *   <li>Optional file-based hot reload when the configured license file changes</li>
  *   <li>Centralized logging and error handling</li>
  * </ul>
  *
@@ -39,6 +42,8 @@ public class LicenseVerifyService {
 
     private final LicenseManagerAdapter licenseManager;
 
+    private final Path configuredLicensePath;
+
     private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
     /**
@@ -50,12 +55,22 @@ public class LicenseVerifyService {
     private volatile long lastSuccessTimestamp = 0;
 
     /**
+     * Tracks the last observed file modification time to avoid unnecessary reload checks.
+     */
+    private volatile long lastKnownLicenseFileModified = 0;
+
+    /**
      * Cache duration for successful verifications.
      */
     private static final long CACHE_DURATION_MS = 60 * 1000L;
 
     public LicenseVerifyService(LicenseManagerAdapter licenseManager) {
+        this(licenseManager, null);
+    }
+
+    public LicenseVerifyService(LicenseManagerAdapter licenseManager, String licensePath) {
         this.licenseManager = licenseManager;
+        this.configuredLicensePath = normalizeLicensePath(licensePath);
     }
 
     /**
@@ -74,6 +89,7 @@ public class LicenseVerifyService {
 
             // Clear the cache because the installed license content has changed.
             lastSuccessTimestamp = 0;
+            updateKnownLastModified(Paths.get(licensePath));
         } catch (Exception e) {
             log.error("License installation failed", e);
 
@@ -101,6 +117,23 @@ public class LicenseVerifyService {
      */
     public boolean verify() {
         long now = System.currentTimeMillis();
+
+        if (shouldReloadConfiguredLicense()) {
+            lock.writeLock().lock();
+            try {
+                if (reloadConfiguredLicenseIfNeeded()) {
+                    lastSuccessTimestamp = System.currentTimeMillis();
+                    return true;
+                }
+            } catch (Exception e) {
+                log.debug("License hot reload failed: {}", e.getMessage());
+                lastSuccessTimestamp = 0;
+                return false;
+            } finally {
+                lock.writeLock().unlock();
+            }
+        }
+
         if (isCacheValid(now)) {
             return true;
         }
@@ -125,6 +158,60 @@ public class LicenseVerifyService {
         } finally {
             lock.readLock().unlock();
         }
+    }
+
+    private boolean reloadConfiguredLicenseIfNeeded() throws Exception {
+        if (configuredLicensePath == null) {
+            return false;
+        }
+
+        if (!hasReadableLicenseFile(configuredLicensePath)) {
+            return false;
+        }
+
+        if (readLastModified(configuredLicensePath) == lastKnownLicenseFileModified) {
+            return false;
+        }
+
+        if (licenseManager.reloadIfNeeded(configuredLicensePath) != null) {
+            updateKnownLastModified(configuredLicensePath);
+            return true;
+        }
+
+        updateKnownLastModified(configuredLicensePath);
+        return false;
+    }
+
+    private boolean shouldReloadConfiguredLicense() {
+        if (configuredLicensePath == null) {
+            return false;
+        }
+        if (!hasReadableLicenseFile(configuredLicensePath)) {
+            return false;
+        }
+        return readLastModified(configuredLicensePath) != lastKnownLicenseFileModified;
+    }
+
+    private void updateKnownLastModified(Path licensePath) {
+        if (licensePath != null && hasReadableLicenseFile(licensePath)) {
+            lastKnownLicenseFileModified = readLastModified(licensePath);
+        }
+    }
+
+    private boolean hasReadableLicenseFile(Path licensePath) {
+        File file = licensePath.toFile();
+        return file.exists() && file.isFile() && file.canRead();
+    }
+
+    private long readLastModified(Path licensePath) {
+        return licensePath.toFile().lastModified();
+    }
+
+    private Path normalizeLicensePath(String licensePath) {
+        if (licensePath == null || licensePath.isBlank()) {
+            return null;
+        }
+        return Paths.get(licensePath.trim());
     }
 
     private boolean isCacheValid(long now) {

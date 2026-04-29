@@ -6,7 +6,7 @@
 
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-dependencies</artifactId>
-    <version>1.1.4</version>
+    <version>1.1.5</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License Dependencies</name>

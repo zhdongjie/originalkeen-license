@@ -100,11 +100,15 @@ public class LicenseAutoConfiguration {
      * Provides a default {@link LicenseVerifyService} bean if none is defined.
      *
      * @param licenseManagerAdapter the license manager adapter
+     * @param properties license configuration properties
      * @return configured {@link LicenseVerifyService} instance
      */
     @Bean
     @ConditionalOnMissingBean(LicenseVerifyService.class)
-    public LicenseVerifyService licenseVerifyService(LicenseManagerAdapter licenseManagerAdapter) {
-        return new LicenseVerifyService(licenseManagerAdapter);
+    public LicenseVerifyService licenseVerifyService(
+            LicenseManagerAdapter licenseManagerAdapter,
+            LicenseProperties properties
+    ) {
+        return new LicenseVerifyService(licenseManagerAdapter, properties.getLicensePath());
     }
 }

@@ -16,9 +16,14 @@ import org.eu.originalkeen.license.model.LicenseCheckModel;
 import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -45,9 +50,9 @@ import java.util.stream.Collectors;
  * tolerant: if a specific hardware attribute is not defined in the
  * license, the corresponding validation will be skipped.</p>
  *
- * <p>This class is thread-safe. All critical operations related to
- * license creation, installation, and verification are synchronized
- * to prevent concurrent state corruption.</p>
+ * <p>This class is thread-safe. Write-side operations such as installation
+ * and reload are serialized to prevent state corruption, while verification
+ * minimizes lock scope so routine checks do not become a global bottleneck.</p>
  *
  * @author Original Keen
  * @see LicenseManager
@@ -59,6 +64,21 @@ public class LicenseManagerAdapter extends LicenseManager {
     private static final Logger log = LogManager.getLogger(LicenseManagerAdapter.class);
 
     private final HardwareDataProvider hardwareDataProvider;
+
+    /**
+     * Tracks the last observed file modification time when reload is driven by a file path.
+     */
+    private volatile long licenseLastModified;
+
+    /**
+     * Tracks the currently installed license payload fingerprint to skip duplicate reloads.
+     */
+    private volatile String licenseFingerprint;
+
+    /**
+     * Serializes write-side state changes performed by install or reload operations.
+     */
+    private final Object reloadLock = new Object();
 
     /**
      * Constructs the adapter with the given TrueLicense parameters and hardware provider.
@@ -78,6 +98,77 @@ public class LicenseManagerAdapter extends LicenseManager {
      */
     public LicenseCheckModel getServerHardwareInfo() {
         return hardwareDataProvider.getHardwareInfo();
+    }
+
+    /**
+     * Reloads the in-memory license state with an explicit notary.
+     *
+     * @param key license key bytes
+     * @param notary license notary
+     * @return validated license content after reload
+     * @throws Exception if reload fails
+     */
+    public LicenseContent reload(byte[] key, LicenseNotary notary) throws Exception {
+        return install(key, notary);
+    }
+
+    /**
+     * Reloads the in-memory license state using the configured notary.
+     *
+     * @param key license key bytes
+     * @return validated license content after reload
+     * @throws Exception if reload fails
+     */
+    public LicenseContent reload(byte[] key) throws Exception {
+        return reload(key, getLicenseNotary());
+    }
+
+    /**
+     * Reloads the license only when the target file has changed.
+     *
+     * @param licensePath path to the license file
+     * @param notary license notary
+     * @return validated license content when a reload occurs, otherwise {@code null}
+     * @throws Exception if the file cannot be read or the license is invalid
+     */
+    public LicenseContent reloadIfNeeded(Path licensePath, LicenseNotary notary) throws Exception {
+        Objects.requireNonNull(licensePath, "licensePath must not be null");
+
+        File file = licensePath.toFile();
+        long lastModified = file.lastModified();
+        if (lastModified == 0L) {
+            throw new IllegalStateException("License file does not exist or cannot be accessed: " + licensePath);
+        }
+
+        if (lastModified == licenseLastModified) {
+            return null;
+        }
+
+        synchronized (reloadLock) {
+            long currentLastModified = file.lastModified();
+            if (currentLastModified == 0L) {
+                throw new IllegalStateException("License file does not exist or cannot be accessed: " + licensePath);
+            }
+            if (currentLastModified == licenseLastModified) {
+                return null;
+            }
+
+            byte[] key = Files.readAllBytes(licensePath);
+            LicenseContent content = install(key, notary);
+            licenseLastModified = currentLastModified;
+            return content;
+        }
+    }
+
+    /**
+     * Reloads the configured license file only when its timestamp changes.
+     *
+     * @param licensePath path to the license file
+     * @return validated license content when a reload occurs, otherwise {@code null}
+     * @throws Exception if the file cannot be read or the license is invalid
+     */
+    public LicenseContent reloadIfNeeded(Path licensePath) throws Exception {
+        return reloadIfNeeded(licensePath, getLicenseNotary());
     }
 
     /**
@@ -105,14 +196,23 @@ public class LicenseManagerAdapter extends LicenseManager {
      * @throws Exception if installation fails
      */
     @Override
-    protected synchronized LicenseContent install(byte[] key, LicenseNotary notary) throws Exception {
-        GenericCertificate certificate = getPrivacyGuard().key2cert(key);
-        notary.verify(certificate);
-        LicenseContent content = (LicenseContent) this.load(certificate.getEncoded());
-        this.validate(content);
-        setLicenseKey(key);
-        setCertificate(certificate);
-        return content;
+    protected LicenseContent install(byte[] key, LicenseNotary notary) throws Exception {
+        synchronized (reloadLock) {
+            String fingerprint = Base64.getEncoder().encodeToString(key);
+            if (fingerprint.equals(licenseFingerprint) && getLicenseKey() != null) {
+                log.debug("License unchanged, skipping reinstall");
+                return verify(notary);
+            }
+
+            GenericCertificate certificate = getPrivacyGuard().key2cert(key);
+            notary.verify(certificate);
+            LicenseContent content = (LicenseContent) this.load(certificate.getEncoded());
+            this.validate(content);
+            setLicenseKey(key);
+            setCertificate(certificate);
+            licenseFingerprint = fingerprint;
+            return content;
+        }
     }
 
     /**
@@ -123,16 +223,24 @@ public class LicenseManagerAdapter extends LicenseManager {
      * @throws Exception if verification fails
      */
     @Override
-    protected synchronized LicenseContent verify(LicenseNotary notary) throws Exception {
-        byte[] key = getLicenseKey();
+    protected LicenseContent verify(LicenseNotary notary) throws Exception {
+        byte[] key;
+        synchronized (reloadLock) {
+            key = getLicenseKey();
+        }
+
         if (key == null) {
             throw new NoLicenseInstalledException(getLicenseParam().getSubject());
         }
+
         GenericCertificate certificate = getPrivacyGuard().key2cert(key);
         notary.verify(certificate);
         LicenseContent content = (LicenseContent) this.load(certificate.getEncoded());
         this.validate(content);
-        setCertificate(certificate);
+
+        synchronized (reloadLock) {
+            setCertificate(certificate);
+        }
         return content;
     }
 
@@ -161,7 +269,7 @@ public class LicenseManagerAdapter extends LicenseManager {
      * @throws LicenseContentException if validation fails
      */
     @Override
-    protected synchronized void validate(LicenseContent content) throws LicenseContentException {
+    protected void validate(LicenseContent content) throws LicenseContentException {
         // First run the native TrueLicense validation chain.
         super.validate(content);
 
