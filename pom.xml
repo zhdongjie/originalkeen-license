@@ -9,7 +9,7 @@
     <!-- ===================== Project Coordinates ===================== -->
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.1.5-SNAPSHOT</version>
+    <version>1.2.0</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License</name>
