@@ -1,6 +1,6 @@
 package org.eu.originalkeen.license.autoconfigure.properties;
 
-import org.eu.originalkeen.license.core.constant.LicenseConstants;
+import org.eu.originalkeen.license.autoconfigure.LicenseWebConstants;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.Assert;
@@ -188,7 +188,7 @@ public class LicenseProperties implements InitializingBean {
                     .map(String::trim)
                     .forEach(mergedPaths::add);
         }
-        mergedPaths.addAll(LicenseConstants.DEFAULT_EXCLUDE_PATHS);
+        mergedPaths.addAll(LicenseWebConstants.DEFAULT_EXCLUDE_PATHS);
         this.excludePaths = new ArrayList<>(mergedPaths);
     }
 }

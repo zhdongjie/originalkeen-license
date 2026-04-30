@@ -9,7 +9,7 @@
     <!-- ===================== Project Coordinates ===================== -->
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License</name>
@@ -63,6 +63,7 @@
         <module>originalkeen-license-dependencies</module>
         <module>originalkeen-license-model</module>
         <module>originalkeen-license-core</module>
+        <module>originalkeen-license-runtime</module>
         <module>originalkeen-license-spring-boot-autoconfigure</module>
         <module>originalkeen-license-spring-boot-starter</module>
     </modules>

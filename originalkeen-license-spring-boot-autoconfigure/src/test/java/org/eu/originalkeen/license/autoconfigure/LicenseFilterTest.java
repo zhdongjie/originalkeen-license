@@ -2,7 +2,9 @@ package org.eu.originalkeen.license.autoconfigure;
 
 import jakarta.servlet.FilterChain;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
-import org.eu.originalkeen.license.core.service.LicenseVerifyService;
+import org.eu.originalkeen.license.runtime.LicenseFailureCode;
+import org.eu.originalkeen.license.runtime.LicenseRuntime;
+import org.eu.originalkeen.license.runtime.LicenseVerificationResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -19,25 +21,28 @@ class LicenseFilterTest {
 
     @Test
     void shouldSkipActuatorAndStaticRequestsUsingDefaultPatterns() {
-        LicenseVerifyService verifyService = mock(LicenseVerifyService.class);
+        LicenseRuntime licenseRuntime = mock(LicenseRuntime.class);
         LicenseProperties properties = createEnabledProperties();
-        LicenseFilter filter = new LicenseFilter(verifyService, properties);
+        LicenseFilter filter = new LicenseFilter(licenseRuntime, properties);
 
         MockHttpServletRequest actuatorRequest = new MockHttpServletRequest("GET", "/actuator/health");
         MockHttpServletRequest staticRequest = new MockHttpServletRequest("GET", "/assets/app.css");
 
         assertTrue(filter.shouldNotFilter(actuatorRequest));
         assertTrue(filter.shouldNotFilter(staticRequest));
-        verify(verifyService, never()).verify();
+        verify(licenseRuntime, never()).verify();
     }
 
     @Test
     void shouldRejectProtectedRequestsWhenLicenseVerificationFails() throws Exception {
-        LicenseVerifyService verifyService = mock(LicenseVerifyService.class);
-        when(verifyService.verify()).thenReturn(false);
+        LicenseRuntime licenseRuntime = mock(LicenseRuntime.class);
+        LicenseVerificationResult result = mock(LicenseVerificationResult.class);
+        when(result.isValid()).thenReturn(false);
+        when(result.getFailureCode()).thenReturn(LicenseFailureCode.EXPIRED);
+        when(licenseRuntime.verify()).thenReturn(result);
 
         LicenseProperties properties = createEnabledProperties();
-        LicenseFilter filter = new LicenseFilter(verifyService, properties);
+        LicenseFilter filter = new LicenseFilter(licenseRuntime, properties);
 
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/orders");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -50,13 +55,32 @@ class LicenseFilterTest {
         verify(filterChain, never()).doFilter(request, response);
     }
 
+    @Test
+    void shouldAllowProtectedRequestsWhenLicenseVerificationSucceeds() throws Exception {
+        LicenseRuntime licenseRuntime = mock(LicenseRuntime.class);
+        LicenseVerificationResult result = mock(LicenseVerificationResult.class);
+        when(result.isValid()).thenReturn(true);
+        when(licenseRuntime.verify()).thenReturn(result);
+
+        LicenseProperties properties = createEnabledProperties();
+        LicenseFilter filter = new LicenseFilter(licenseRuntime, properties);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/orders");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        FilterChain filterChain = mock(FilterChain.class);
+
+        filter.doFilter(request, response, filterChain);
+
+        verify(filterChain).doFilter(request, response);
+    }
+
     private LicenseProperties createEnabledProperties() {
         LicenseProperties properties = new LicenseProperties();
         properties.setEnabled(true);
         properties.setSubject("demo-subject");
         properties.setPublicAlias("publiccert");
         properties.setPublicKeyStorePath("classpath:publicCerts.keystore");
-        properties.setPublicPassword("changeit");
+        properties.setPublicPassword("changeit1");
         properties.afterPropertiesSet();
         return properties;
     }

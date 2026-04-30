@@ -1,114 +1,93 @@
 package org.eu.originalkeen.license.autoconfigure;
 
-import de.schlichtherle.license.DefaultCipherParam;
-import de.schlichtherle.license.DefaultLicenseParam;
-import de.schlichtherle.license.LicenseParam;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
 import org.eu.originalkeen.license.core.hardware.HardwareDataProvider;
-import org.eu.originalkeen.license.core.hardware.LinuxHardwareProvider;
-import org.eu.originalkeen.license.core.hardware.WindowsHardwareProvider;
-import org.eu.originalkeen.license.core.keystore.FileKeyStoreParam;
 import org.eu.originalkeen.license.core.manager.LicenseManagerAdapter;
 import org.eu.originalkeen.license.core.service.LicenseVerifyService;
+import org.eu.originalkeen.license.runtime.LicenseRuntime;
+import org.eu.originalkeen.license.runtime.LicenseRuntimeBuilder;
+import org.eu.originalkeen.license.runtime.internal.bootstrap.LicenseRuntimeAssembly;
+import org.eu.originalkeen.license.runtime.internal.bootstrap.LicenseRuntimeBootstrap;
+import org.eu.originalkeen.license.runtime.spi.LicenseRuntimeCustomizer;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
-import java.util.prefs.Preferences;
-
 /**
- * {@code LicenseAutoConfiguration} provides the default beans
- * necessary to enable the Original Keen License system in a Spring Boot application.
- *
- * <p>All beans are conditional on missing beans, allowing users to
- * override any part of the license system by providing their own implementation.</p>
- *
- * <p>Beans provided include:</p>
- * <ul>
- *   <li>{@link HardwareDataProvider} as the default OS-specific provider</li>
- *   <li>{@link LicenseParam} with values mapped from {@link LicenseProperties}</li>
- *   <li>{@link LicenseManagerAdapter} as the bridge to TrueLicense and hardware checks</li>
- *   <li>{@link LicenseVerifyService} as the thread-safe install and verify facade</li>
- * </ul>
- *
- * <p>This configuration is automatically enabled when the application
- * is a Spring Boot application and {@link LicenseProperties} are
- * bound from configuration.</p>
+ * Spring auto-configuration for the V2 runtime-backed license stack.
  */
 @AutoConfiguration
 @EnableConfigurationProperties(LicenseProperties.class)
+@ConditionalOnProperty(
+        prefix = "originalkeen.license",
+        name = "enabled",
+        havingValue = "true",
+        matchIfMissing = true
+)
 public class LicenseAutoConfiguration {
 
     /**
-     * Provides a default {@link HardwareDataProvider} bean if none is defined.
-     * The implementation is chosen based on the underlying operating system.
-     *
-     * @return operating-system-specific hardware data provider
+     * Provides a default hardware provider bean if none is defined.
      */
     @Bean
     @ConditionalOnMissingBean(HardwareDataProvider.class)
     public HardwareDataProvider hardwareDataProvider() {
-        String osName = System.getProperty("os.name").toLowerCase();
-        return osName.startsWith("windows") ? new WindowsHardwareProvider() : new LinuxHardwareProvider();
+        return LicenseRuntimeBootstrap.createDefaultHardwareDataProvider();
     }
 
     /**
-     * Provides a default {@link LicenseParam} bean if none is defined.
-     *
-     * @param properties license configuration properties
-     * @return configured {@link LicenseParam} instance
+     * Builds a shared runtime assembly from properties, provider beans, and customizers.
      */
     @Bean
-    @ConditionalOnMissingBean(LicenseParam.class)
-    public LicenseParam licenseParam(LicenseProperties properties) {
-        Preferences preferences = Preferences.userNodeForPackage(LicenseVerifyService.class);
-
-        FileKeyStoreParam publicStoreParam = new FileKeyStoreParam(
-                LicenseVerifyService.class,
-                properties.getPublicKeyStorePath(),
-                properties.getPublicAlias(),
-                properties.getPublicPassword(),
-                null
-        );
-
-        return new DefaultLicenseParam(
-                properties.getSubject(),
-                preferences,
-                publicStoreParam,
-                new DefaultCipherParam(properties.getPublicPassword())
-        );
-    }
-
-    /**
-     * Provides a default {@link LicenseManagerAdapter} bean if none is defined.
-     *
-     * @param licenseParam the license parameter
-     * @param provider the hardware data provider
-     * @return configured {@link LicenseManagerAdapter} instance
-     */
-    @Bean
-    @ConditionalOnMissingBean(LicenseManagerAdapter.class)
-    public LicenseManagerAdapter licenseManagerAdapter(
-            LicenseParam licenseParam,
-            HardwareDataProvider provider
+    @ConditionalOnMissingBean({LicenseRuntime.class, LicenseRuntimeAssembly.class})
+    public LicenseRuntimeAssembly licenseRuntimeAssembly(
+            LicenseProperties properties,
+            ObjectProvider<HardwareDataProvider> hardwareDataProvider,
+            ObjectProvider<LicenseRuntimeCustomizer> customizers
     ) {
-        return new LicenseManagerAdapter(licenseParam, provider);
+        LicenseRuntimeBuilder builder = LicenseRuntime.builder()
+                .subject(properties.getSubject())
+                .licensePath(properties.getLicensePath())
+                .publicAlias(properties.getPublicAlias())
+                .publicKeyStorePath(properties.getPublicKeyStorePath())
+                .publicPassword(properties.getPublicPassword());
+
+        HardwareDataProvider provider = hardwareDataProvider.getIfAvailable();
+        if (provider != null) {
+            builder.hardwareDataProvider(provider);
+        }
+
+        customizers.orderedStream().forEach(customizer -> customizer.customize(builder));
+        return LicenseRuntimeBootstrap.assemble(builder);
     }
 
     /**
-     * Provides a default {@link LicenseVerifyService} bean if none is defined.
-     *
-     * @param licenseManagerAdapter the license manager adapter
-     * @param properties license configuration properties
-     * @return configured {@link LicenseVerifyService} instance
+     * Exposes the primary V2 runtime bean.
+     */
+    @Bean
+    @ConditionalOnMissingBean(LicenseRuntime.class)
+    public LicenseRuntime licenseRuntime(LicenseRuntimeAssembly assembly) {
+        return assembly.getRuntime();
+    }
+
+    /**
+     * Keeps the core verification service available as a compatibility bean.
      */
     @Bean
     @ConditionalOnMissingBean(LicenseVerifyService.class)
-    public LicenseVerifyService licenseVerifyService(
-            LicenseManagerAdapter licenseManagerAdapter,
-            LicenseProperties properties
-    ) {
-        return new LicenseVerifyService(licenseManagerAdapter, properties.getLicensePath());
+    public LicenseVerifyService licenseVerifyService(LicenseRuntimeAssembly assembly) {
+        return assembly.getVerifyService();
+    }
+
+    /**
+     * Exposes the assembled manager as an advanced bean for diagnostic scenarios.
+     */
+    @Bean
+    @ConditionalOnMissingBean(LicenseManagerAdapter.class)
+    public LicenseManagerAdapter licenseManagerAdapter(LicenseRuntimeAssembly assembly) {
+        return assembly.getLicenseManager();
     }
 }

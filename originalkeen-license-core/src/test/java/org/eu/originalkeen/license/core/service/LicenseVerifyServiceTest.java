@@ -9,8 +9,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -25,18 +30,36 @@ class LicenseVerifyServiceTest {
     void shouldUseCachedSuccessUntilCacheExpires() throws Exception {
         LicenseManagerAdapter licenseManager = mock(LicenseManagerAdapter.class);
         LicenseVerifyService service = new LicenseVerifyService(licenseManager);
+        LicenseContent verifiedContent = new LicenseContent();
+        verifiedContent.setNotAfter(Date.from(Instant.now().plus(30, ChronoUnit.DAYS)));
 
         when(licenseManager.verify())
-                .thenReturn(null)
+                .thenReturn(verifiedContent)
                 .thenThrow(new IllegalStateException("license expired"));
 
-        assertTrue(service.verify(), "The first verification should delegate to the license manager.");
-        assertTrue(service.verify(), "The second verification should reuse the short-lived success cache.");
+        CoreVerificationOutcome first = service.verifyDetailed();
+        assertTrue(first.isValid(), "The first verification should delegate to the license manager.");
+        assertFalse(first.isFromCache());
+        assertFalse(first.isReloaded());
+        assertNotNull(first.getContent());
+        assertNotNull(first.getCheckedAt());
+        assertFalse(first.isConfiguredLicensePathPresent());
+        assertFalse(first.isConfiguredLicenseFileReadable());
+
+        CoreVerificationOutcome cached = service.verifyDetailed();
+        assertTrue(cached.isValid(), "The second verification should reuse the short-lived success cache.");
+        assertTrue(cached.isFromCache());
+        assertFalse(cached.isReloaded());
         verify(licenseManager, times(1)).verify();
 
         expireVerificationCache(service);
 
-        assertFalse(service.verify(), "Once the cache expires, the service must perform a real verification again.");
+        CoreVerificationOutcome failed = service.verifyDetailed();
+        assertFalse(failed.isValid(), "Once the cache expires, the service must perform a real verification again.");
+        assertNotNull(failed.getFailure());
+        assertNull(failed.getContent());
+        assertFalse(failed.isFromCache());
+        assertFalse(failed.isReloaded());
         verify(licenseManager, times(2)).verify();
     }
 
@@ -53,11 +76,19 @@ class LicenseVerifyServiceTest {
 
             when(licenseManager.reloadIfNeeded(any())).thenReturn(new LicenseContent());
 
-            assertTrue(fileBoundService.verify(), "A modified license file should trigger hot reload and verification success.");
+            CoreVerificationOutcome reloaded = fileBoundService.verifyDetailed();
+            assertTrue(reloaded.isValid(), "A modified license file should trigger hot reload and verification success.");
+            assertFalse(reloaded.isFromCache());
+            assertTrue(reloaded.isReloaded());
+            assertTrue(reloaded.isConfiguredLicensePathPresent());
+            assertTrue(reloaded.isConfiguredLicenseFileReadable());
             verify(licenseManager, times(1)).reloadIfNeeded(any());
             verify(licenseManager, never()).verify();
 
-            assertTrue(fileBoundService.verify(), "After hot reload, the short-lived cache should be used.");
+            CoreVerificationOutcome cached = fileBoundService.verifyDetailed();
+            assertTrue(cached.isValid(), "After hot reload, the short-lived cache should be used.");
+            assertTrue(cached.isFromCache());
+            assertFalse(cached.isReloaded());
             verify(licenseManager, times(1)).reloadIfNeeded(any());
             verify(licenseManager, never()).verify();
         } finally {

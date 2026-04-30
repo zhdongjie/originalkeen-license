@@ -1,11 +1,13 @@
 package org.eu.originalkeen.license.core.service;
 
+import de.schlichtherle.license.LicenseContent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eu.originalkeen.license.core.manager.LicenseManagerAdapter;
 import org.eu.originalkeen.license.model.LicenseCheckModel;
 
 import java.io.File;
+import java.time.Instant;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -55,6 +57,14 @@ public class LicenseVerifyService {
     private volatile long lastSuccessTimestamp = 0;
 
     /**
+     * Last successfully verified license content.
+     *
+     * <p>This is used only for higher-level adapters that need expiry metadata
+     * while still reusing the service's built-in cache behavior.</p>
+     */
+    private volatile LicenseContent lastSuccessfulContent;
+
+    /**
      * Tracks the last observed file modification time to avoid unnecessary reload checks.
      */
     private volatile long lastKnownLicenseFileModified = 0;
@@ -88,10 +98,11 @@ public class LicenseVerifyService {
             log.info("License installed successfully");
 
             // Clear the cache because the installed license content has changed.
-            lastSuccessTimestamp = 0;
+            clearSuccessCache();
             updateKnownLastModified(Paths.get(licensePath));
         } catch (Exception e) {
             log.error("License installation failed", e);
+            clearSuccessCache();
 
             // Log the current hardware snapshot to help diagnose binding mismatches.
             try {
@@ -116,26 +127,60 @@ public class LicenseVerifyService {
      * @return {@code true} if the license is valid, otherwise {@code false}
      */
     public boolean verify() {
+        return verifyDetailed().isValid();
+    }
+
+    /**
+     * Verify the license and expose detailed outcome metadata.
+     *
+     * <p>This method preserves the existing verification behavior but returns
+     * enough information for higher-level runtime adapters to build a structured
+     * verification result.</p>
+     *
+     * @return detailed verification outcome
+     */
+    public CoreVerificationOutcome verifyDetailed() {
         long now = System.currentTimeMillis();
 
         if (shouldReloadConfiguredLicense()) {
             lock.writeLock().lock();
             try {
-                if (reloadConfiguredLicenseIfNeeded()) {
-                    lastSuccessTimestamp = System.currentTimeMillis();
-                    return true;
+                LicenseContent reloadedContent = reloadConfiguredLicenseIfNeeded();
+                if (reloadedContent != null) {
+                    long successAt = System.currentTimeMillis();
+                    rememberSuccessfulVerification(reloadedContent, successAt);
+                    return CoreVerificationOutcome.success(
+                            reloadedContent,
+                            false,
+                            true,
+                            Instant.ofEpochMilli(successAt),
+                            isConfiguredLicensePathPresent(),
+                            isConfiguredLicenseFileReadable()
+                    );
                 }
             } catch (Exception e) {
                 log.debug("License hot reload failed: {}", e.getMessage());
-                lastSuccessTimestamp = 0;
-                return false;
+                clearSuccessCache();
+                return CoreVerificationOutcome.failure(
+                        e,
+                        Instant.now(),
+                        isConfiguredLicensePathPresent(),
+                        isConfiguredLicenseFileReadable()
+                );
             } finally {
                 lock.writeLock().unlock();
             }
         }
 
         if (isCacheValid(now)) {
-            return true;
+            return CoreVerificationOutcome.success(
+                    lastSuccessfulContent,
+                    true,
+                    false,
+                    Instant.ofEpochMilli(now),
+                    isConfiguredLicensePathPresent(),
+                    isConfiguredLicenseFileReadable()
+            );
         }
 
         lock.readLock().lock();
@@ -144,42 +189,64 @@ public class LicenseVerifyService {
              * Another thread may have refreshed the cache while this thread was waiting
              * for the lock, so check the timestamp again before calling the manager.
              */
-            if (isCacheValid(System.currentTimeMillis())) {
-                return true;
+            long recheckedNow = System.currentTimeMillis();
+            if (isCacheValid(recheckedNow)) {
+                return CoreVerificationOutcome.success(
+                        lastSuccessfulContent,
+                        true,
+                        false,
+                        Instant.ofEpochMilli(recheckedNow),
+                        isConfiguredLicensePathPresent(),
+                        isConfiguredLicenseFileReadable()
+                );
             }
 
-            licenseManager.verify();
-            lastSuccessTimestamp = System.currentTimeMillis();
-            return true;
+            LicenseContent content = licenseManager.verify();
+            long successAt = System.currentTimeMillis();
+            rememberSuccessfulVerification(content, successAt);
+            return CoreVerificationOutcome.success(
+                    content,
+                    false,
+                    false,
+                    Instant.ofEpochMilli(successAt),
+                    isConfiguredLicensePathPresent(),
+                    isConfiguredLicenseFileReadable()
+            );
         } catch (Exception e) {
             log.debug("License verification failed: {}", e.getMessage());
-            lastSuccessTimestamp = 0;
-            return false;
+            clearSuccessCache();
+            return CoreVerificationOutcome.failure(
+                    e,
+                    Instant.now(),
+                    isConfiguredLicensePathPresent(),
+                    isConfiguredLicenseFileReadable()
+            );
         } finally {
             lock.readLock().unlock();
         }
     }
 
-    private boolean reloadConfiguredLicenseIfNeeded() throws Exception {
+    private LicenseContent reloadConfiguredLicenseIfNeeded() throws Exception {
         if (configuredLicensePath == null) {
-            return false;
+            return null;
         }
 
         if (!hasReadableLicenseFile(configuredLicensePath)) {
-            return false;
+            return null;
         }
 
         if (readLastModified(configuredLicensePath) == lastKnownLicenseFileModified) {
-            return false;
+            return null;
         }
 
-        if (licenseManager.reloadIfNeeded(configuredLicensePath) != null) {
+        LicenseContent reloaded = licenseManager.reloadIfNeeded(configuredLicensePath);
+        if (reloaded != null) {
             updateKnownLastModified(configuredLicensePath);
-            return true;
+            return reloaded;
         }
 
         updateKnownLastModified(configuredLicensePath);
-        return false;
+        return null;
     }
 
     private boolean shouldReloadConfiguredLicense() {
@@ -216,5 +283,23 @@ public class LicenseVerifyService {
 
     private boolean isCacheValid(long now) {
         return lastSuccessTimestamp > 0 && (now - lastSuccessTimestamp) < CACHE_DURATION_MS;
+    }
+
+    private void rememberSuccessfulVerification(LicenseContent content, long timestamp) {
+        lastSuccessfulContent = content;
+        lastSuccessTimestamp = timestamp;
+    }
+
+    private void clearSuccessCache() {
+        lastSuccessfulContent = null;
+        lastSuccessTimestamp = 0;
+    }
+
+    private boolean isConfiguredLicensePathPresent() {
+        return configuredLicensePath != null;
+    }
+
+    private boolean isConfiguredLicenseFileReadable() {
+        return configuredLicensePath != null && hasReadableLicenseFile(configuredLicensePath);
     }
 }

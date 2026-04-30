@@ -1,50 +1,47 @@
 # OriginalKeen License Spring Boot Auto-Configuration
 
-**OriginalKeen License Spring Boot Auto-Configuration** is a Spring Boot starter module that provides **automatic license verification** for Java applications. It supports **hardware-bound licenses**, including CPU, motherboard, IP, and MAC addresses, and integrates seamlessly with Spring Boot applications.
+`originalkeen-license-spring-boot-autoconfigure` provides the runtime-backed Spring Boot bean wiring behind OriginalKeen License. Use this module directly only when you want fine-grained dependency control. Most application teams should prefer the starter module.
 
----
+## What This Module Does Now
+
+This module no longer hand-assembles the primary `core` path directly. Instead, it adapts Spring Boot onto the shared runtime layer and keeps a small compatibility surface for existing applications.
 
 ## Features
 
-* **Automatic License Verification**: Validate license files during application startup or on demand.
-* **Hardware Binding**: License can be bound to specific hardware (CPU, motherboard, IP, MAC).
-* **Web Interceptor Support**: Integrate license verification for HTTP requests.
-* **Cross-platform Support**: Works on Windows and Linux.
-* **Configurable**: Enable/disable verification, customize license path, and configure web interceptor paths.
-* **Caching**: License verification results are cached for a short duration to improve performance.
-
----
+- Registers a default `HardwareDataProvider` when none is supplied
+- Builds and exposes `LicenseRuntime` as the primary Spring bean
+- Keeps `LicenseVerifyService` available as a compatibility bean
+- Exposes `LicenseManagerAdapter` as an advanced diagnostic bean
+- Runs startup installation through `runtime.installIfPresent()`
+- Registers a servlet filter that rejects protected requests with HTTP 403 when runtime verification fails
+- Applies ordered `LicenseRuntimeCustomizer` beans before runtime creation
 
 ## Installation
-
-Add the module dependency to your Spring Boot project:
 
 ```xml
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 
----
-
 ## Configuration Properties
 
-The module can be configured via `application.yml` or `application.properties`.
+| Property | Default | Description |
+| --- | --- | --- |
+| `originalkeen.license.enabled` | `true` | Globally enables license support. When `false`, runtime beans are not created. |
+| `originalkeen.license.web-enabled` | `true` | Enables servlet request interception. |
+| `originalkeen.license.subject` | required when enabled | License subject passed to the runtime builder. |
+| `originalkeen.license.license-path` | blank | Optional startup install and hot reload path. If blank or unreadable, startup skips optional install. |
+| `originalkeen.license.public-alias` | required when enabled | Public key alias in the keystore. |
+| `originalkeen.license.public-key-store-path` | required when enabled | Public keystore path. Supports `classpath:` and filesystem paths. |
+| `originalkeen.license.public-password` | required when enabled | Password for the public keystore and cipher parameter. |
+| `originalkeen.license.exclude-paths` | custom list merged with built-in defaults | Extra servlet paths excluded from verification. |
 
-| Property                                     | Default | Description                                         |
-| -------------------------------------------- | ------- | --------------------------------------------------- |
-| `originalkeen.license.enabled`               | `true`  | Enable license verification                         |
-| `originalkeen.license.web-enabled`           | `true`  | Enable web request interception                     |
-| `originalkeen.license.subject`               | -       | License subject (required if enabled)               |
-| `originalkeen.license.license-path`          | -       | Path to the license file                            |
-| `originalkeen.license.public-alias`          | -       | Public key alias                                    |
-| `originalkeen.license.public-key-store-path` | -       | Public key file path                                |
-| `originalkeen.license.public-password`       | -       | Public key password                                 |
-| `originalkeen.license.exclude-paths`         | `[]`    | List of URL patterns excluded from web interception |
+Built-in servlet exclusions always include `/actuator/**`, `/error`, `/favicon.ico`, and common static resource patterns such as CSS, JS, HTML, and image files.
 
-**Example (application.yml):**
+Example:
 
 ```yaml
 originalkeen:
@@ -55,96 +52,68 @@ originalkeen:
     license-path: "/opt/licenses/myapp.lic"
     public-alias: "public"
     public-key-store-path: "classpath:publicKey.keystore"
-    public-password: "changeit"
+    public-password: "changeit1"
     exclude-paths:
       - /login
-      - /actuator/**
+      - /api/public/**
 ```
 
----
+## Exposed Beans
 
-## Usage
+| Bean Type | Role |
+| --- | --- |
+| `LicenseRuntime` | Primary application-facing runtime bean |
+| `LicenseVerifyService` | Compatibility bean for existing integrations |
+| `LicenseManagerAdapter` | Advanced diagnostic or expert bean |
+| `HardwareDataProvider` | Built-in or user-supplied hardware provider |
+| `LicenseRuntimeCustomizer` | Builder refinement hook discovered from the Spring context |
 
-### Automatic License Installation
+## Runtime Behavior
 
-The module automatically installs the license file on application startup if `originalkeen.license.enabled=true` and `license-path` is configured.
+- Startup installation runs when `enabled=true`.
+- A blank or unreadable `license-path` logs a warning and skips optional install instead of failing startup.
+- Servlet requests that are not excluded are verified before reaching application code.
+- Verification failures return HTTP 403 from the servlet filter.
+- If the configured license file changes and is readable, verification reloads it before reusing the short-lived success cache.
 
-### Programmatic License Installation
+## Customization
 
-You can manually install a license at runtime:
-
-```java
-@Autowired
-private LicenseVerifyService licenseVerifyService;
-
-public void installLicense() {
-    licenseVerifyService.install("/path/to/license.lic");
-}
-```
-
-### License Verification
-
-Verify license programmatically:
-
-```java
-boolean valid = licenseVerifyService.verify();
-if (!valid) {
-    throw new RuntimeException("License verification failed");
-}
-```
-
-### Web Request Interceptor
-
-When `web-enabled` is true, all HTTP requests are intercepted and license is verified.
-You can configure excluded paths via `exclude-paths` property. Requests failing license verification will return **HTTP 403 Forbidden**.
-
----
-
-## Hardware Binding
-
-The license system supports hardware binding:
-
-* **CPU Serial**
-* **Motherboard Serial**
-* **IP Addresses**
-* **MAC Addresses**
-
-If the license does not match the current hardware, verification fails.
-
----
-
-## Extending
-
-You can provide a custom `HardwareDataProvider` bean to override hardware detection logic:
+### Override the Hardware Provider
 
 ```java
 @Bean
-@ConditionalOnMissingBean(HardwareDataProvider.class)
 public HardwareDataProvider hardwareDataProvider() {
     return new CustomHardwareProvider();
 }
 ```
 
----
+### Refine Runtime Creation
 
-## Logging
+```java
+@Bean
+public LicenseRuntimeCustomizer licenseRuntimeCustomizer() {
+    return builder -> builder.preferencesNodeName("/my/company/license");
+}
+```
 
-All license events and warnings are logged using **Log4j2**.
+### Replace the Default Runtime Entirely
 
-* License installation success/failure
-* License verification success/failure
-* License expiration warnings (15 days before expiry)
+If you need deeper low-level control than the builder and customizer allow, provide your own `LicenseRuntime` bean and bypass the default runtime assembly path.
 
----
+## Migration Notes
 
-## Notes
+- New Spring code should inject `LicenseRuntime`.
+- Existing code that injects `LicenseVerifyService` can keep working in the first V2 release line.
+- Existing `originalkeen.license.*` property names stay unchanged.
 
-* Ensure your public key file is accessible (classpath or file path).
-* The module caches successful verification results for **60 seconds** to improve performance.
-* Hardware detection may require elevated permissions on Linux for CPU or motherboard serial access.
+For a fuller migration walkthrough, see [../docs/v2/spring-migration-guide.md](../docs/v2/spring-migration-guide.md).
 
----
+## Platform Notes
+
+- Built-in runtime providers support Windows and Linux.
+- For macOS or other operating systems, register a custom `HardwareDataProvider` bean.
+- Linux hardware collection may require elevated privileges for some serial number lookup strategies.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License 2.0.

@@ -6,7 +6,7 @@
 
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-dependencies</artifactId>
-    <version>1.1.5</version>
+    <version>1.1.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Original Keen License Dependencies</name>
@@ -65,6 +65,11 @@
             <dependency>
                 <groupId>org.eu.originalkeen</groupId>
                 <artifactId>originalkeen-license-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eu.originalkeen</groupId>
+                <artifactId>originalkeen-license-runtime</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

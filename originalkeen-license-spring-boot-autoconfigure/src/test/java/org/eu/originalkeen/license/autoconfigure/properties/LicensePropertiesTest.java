@@ -36,7 +36,7 @@ class LicensePropertiesTest {
         properties.setSubject("demo-subject");
         properties.setPublicAlias("publiccert");
         properties.setPublicKeyStorePath("classpath:publicCerts.keystore");
-        properties.setPublicPassword("changeit");
+        properties.setPublicPassword("changeit1");
         return properties;
     }
 }

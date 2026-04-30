@@ -2,6 +2,13 @@
 
 These scripts collect client hardware information for the current `LicenseCheckModel` structure.
 
+Built-in runtime verification providers currently target Windows and Linux. The macOS script is primarily intended for registration or issuing-side workflows unless you add a custom macOS `HardwareDataProvider`.
+
+Compatibility note:
+
+- the planned V2 runtime direction keeps the same `LicenseCheckModel` field contract
+- these scripts remain aligned with both the current release line and the proposed runtime-facing future
+
 Generated JSON fields:
 
 - `protocolVersion`
@@ -77,10 +84,16 @@ Notes:
 
 If you want to set a different protocol version:
 
-Linux or macOS:
+Linux:
 
 ```bash
 PROTOCOL_VERSION=1.0 bash scripts/client-info/collect-client-info-linux.sh
+```
+
+macOS:
+
+```bash
+PROTOCOL_VERSION=1.0 bash scripts/client-info/collect-client-info-macos.sh
 ```
 
 Windows:

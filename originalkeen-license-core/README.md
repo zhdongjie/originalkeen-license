@@ -1,137 +1,124 @@
-# License Core
+# OriginalKeen License Core
 
-`license-core` is a lightweight Java license management library designed for generating, installing, and validating software licenses based on hardware fingerprints and certificate verification.  
-It supports both **Linux** and **Windows** environments and allows flexible hardware binding (CPU, mainboard, MAC, IP).
+`originalkeen-license-core` contains the low-level verification engine behind OriginalKeen License. It remains public, but it is now the expert layer rather than the default plain Java entry point.
+
+## Position in the Repository
+
+- Preferred plain Java path: use [../originalkeen-license-runtime/README.md](../originalkeen-license-runtime/README.md)
+- Preferred Spring Boot path: use [../originalkeen-license-spring-boot-starter/README.md](../originalkeen-license-spring-boot-starter/README.md)
+- Expert path: use `core` when you need direct control over keystore wiring, provider selection, or verification assembly
 
 ## Features
 
-- Generate and install license certificates (XML + digital signature).
-- Bind license to server hardware (CPU, motherboard, MAC, IP).
-- Validate license at runtime with caching to improve performance.
-- Multi-platform support: Linux, Windows.
-- Provides hooks for custom hardware info providers.
+- Windows and Linux hardware providers for CPU, motherboard, IP, and MAC collection
+- Shared base provider with cached IP and MAC discovery
+- `FileKeyStoreParam` for classpath or filesystem keystore loading
+- `LicenseManagerAdapter` for signature, expiry, and hardware-binding verification
+- `LicenseVerifyService` for installation, 60-second success caching, optional hot reload, and detailed verification outcomes
+- Extension points for custom `HardwareDataProvider` implementations
 
 ## Installation
 
 ### Maven
 
-Add the dependency to your `pom.xml`:
-
 ```xml
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
-    <artifactId>license-core</artifactId>
-    <version>1.0.0</version>
+    <artifactId>originalkeen-license-core</artifactId>
+    <version>1.1.5</version>
 </dependency>
-````
+```
 
 ### Gradle
 
 ```groovy
-implementation 'org.eu.originalkeen:license-core:1.0.0'
+implementation 'org.eu.originalkeen:originalkeen-license-core:1.1.5'
 ```
 
-## Usage
+## Advanced Manual Assembly
 
-### 1. Implement Hardware Provider
-
-You can extend `AbstractHardwareProvider` for your platform:
+Use this path only when `runtime` is not sufficient for your integration.
 
 ```java
-HardwareDataProvider provider = new LinuxHardwareProvider();
-// or for Windows
-// HardwareDataProvider provider = new WindowsHardwareProvider();
-```
+Preferences preferences = Preferences.userNodeForPackage(LicenseVerifyService.class);
 
-### 2. Create License Manager
+FileKeyStoreParam publicStoreParam = new FileKeyStoreParam(
+        LicenseVerifyService.class,
+        "classpath:publicKey.keystore",
+        "public",
+        "changeit1",
+        null
+);
 
-```java
-LicenseParam param = new LicenseParam(); // configure keyStore, subject, etc.
-LicenseManagerAdapter manager = new LicenseManagerAdapter(param, provider);
-```
+LicenseParam licenseParam = new DefaultLicenseParam(
+        "MyAppLicense",
+        preferences,
+        publicStoreParam,
+        new DefaultCipherParam("changeit1")
+);
 
-### 3. Install License
+String osName = System.getProperty("os.name").toLowerCase();
 
-```java
-LicenseVerifyService service = new LicenseVerifyService(manager);
-service.install("/path/to/license.lic");
-```
+HardwareDataProvider provider;
+if (osName.startsWith("windows")) {
+    provider = new WindowsHardwareProvider();
+} else if (osName.startsWith("linux")) {
+    provider = new LinuxHardwareProvider();
+} else {
+    throw new IllegalStateException("Register a custom HardwareDataProvider for " + osName);
+}
 
-### 4. Verify License at Runtime
+LicenseManagerAdapter manager = new LicenseManagerAdapter(licenseParam, provider);
+LicenseVerifyService service = new LicenseVerifyService(manager, "/opt/licenses/myapp.lic");
 
-```java
-boolean valid = service.verify();
-if (!valid) {
-    throw new RuntimeException("License verification failed");
+service.install("/opt/licenses/myapp.lic");
+
+if (!service.verify()) {
+    throw new IllegalStateException("License verification failed");
 }
 ```
 
-## License File Structure
+Notes:
 
-* Uses **XML** encoding.
-* Contains `LicenseCheckModel` for hardware binding:
+- Pass the configured license path into `LicenseVerifyService` when you want hot reload checks.
+- Use `new LicenseVerifyService(manager)` if you only want manual install and verify operations.
+- `verifyDetailed()` exists for runtime adapters and infrastructure code that need structured verification metadata.
+- If you only need a supported non-Spring application API, prefer `LicenseRuntime` instead of extending this assembly story further.
+
+## Hardware Binding Model
+
+License hardware requirements are stored in `LicenseCheckModel`, which is read from `LicenseContent#getExtra()`.
 
 ```text
 LicenseCheckModel:
+  - protocolVersion
+  - ipAddress (List<String>)
+  - macAddress (List<String>)
   - cpuSerial
   - mainBoardSerial
-  - macAddress (List<String>)
-  - ipAddress (List<String>)
 ```
 
-* Supports validity period: `notBefore` and `notAfter`.
+## Matching Rules
 
-## Hardware Binding Rules
+- CPU serial: exact match when configured
+- Main-board serial: exact match when configured
+- MAC address: verification passes when at least one runtime MAC matches
+- IP address: verification passes when at least one runtime IP matches
+- Empty or missing fields in the license mean that binding rule is skipped
 
-* CPU Serial: exact match
-* Mainboard Serial: exact match
-* MAC Address: at least one matches
-* IP Address: at least one matches
-* Rules are optional: empty list means no binding.
+## Logging and Operations
 
-## Caching
-
-License verification caches success results for **60 seconds** by default to reduce repeated hardware checks.
-
-## Logging
-
-* Uses `Log4j2` for logs.
-* Logs license installation, verification, and expiry warnings.
-
-## Examples
-
-```java
-public class LicenseDemo {
-    public static void main(String[] args) {
-        HardwareDataProvider provider = new LinuxHardwareProvider();
-        LicenseParam param = new LicenseParam();
-        LicenseManagerAdapter manager = new LicenseManagerAdapter(param, provider);
-        LicenseVerifyService service = new LicenseVerifyService(manager);
-
-        // Install license
-        service.install("/opt/license/license.lic");
-
-        // Verify license
-        if (service.verify()) {
-            System.out.println("License is valid!");
-        } else {
-            System.out.println("License is invalid or expired.");
-        }
-    }
-}
-```
+- Successful verification results are cached for 60 seconds by default.
+- License reload checks can pick up a changed license file before the cache is reused.
+- Expiry warnings are logged when less than 15 days remain.
+- Installation and verification failures log diagnostic details, including current hardware info when installation fails.
 
 ## Supported Platforms
 
-* Linux (tested on Ubuntu, CentOS)
-* Windows (tested on Windows 10 / 11 / Server)
-
-## Contributing
-
-1. Fork the repository
-2. Implement features or bug fixes
-3. Submit a pull request
+- Windows: built-in runtime provider
+- Linux: built-in runtime provider
+- macOS and other operating systems: provide a custom `HardwareDataProvider`
 
 ## License
 
-This project is **proprietary** and intended for internal enterprise usage.
+This project is licensed under the Apache License 2.0.

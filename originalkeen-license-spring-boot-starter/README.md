@@ -1,52 +1,68 @@
 # OriginalKeen License Spring Boot Starter
 
-**OriginalKeen License Spring Boot Starter** is a Spring Boot starter module that **automatically integrates the OriginalKeen License verification system** into your Spring Boot applications. It provides out-of-the-box **license installation, verification, and web request interception** with minimal configuration.
-
----
+`originalkeen-license-spring-boot-starter` is the recommended Spring Boot entry point for OriginalKeen License. It pulls in the runtime-backed auto-configuration and exposes the simplest application-facing integration path.
 
 ## Features
 
-* **Auto-Configuration**: Automatically sets up license verification beans.
-* **Hardware Binding**: License verification supports CPU, motherboard, IP, and MAC addresses.
-* **Web Interceptor**: Supports HTTP request interception to enforce license checks.
-* **Cross-Platform**: Works on Windows and Linux.
-* **Caching**: Verification results are cached for improved performance.
-* **Customizable**: Override beans like `HardwareDataProvider` or `LicenseParam` as needed.
+- Zero-boilerplate Spring Boot integration
+- Runtime-backed startup installation through `LicenseRuntime`
+- Servlet request interception with configurable exclusions
+- Verification success cache and configured license file hot reload support
+- `LicenseRuntime` as the primary application-facing bean
+- Compatibility exposure for `LicenseVerifyService` in the first V2 release line
+- Extension points for custom hardware providers and ordered `LicenseRuntimeCustomizer` beans
 
----
+## Recommended Installation
 
-## Installation
+Import the BOM and then add the starter dependency without repeating versions:
 
-Add the starter dependency to your Spring Boot project:
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.eu.originalkeen</groupId>
+            <artifactId>originalkeen-license-dependencies</artifactId>
+            <version>1.1.5</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <dependency>
+        <groupId>org.eu.originalkeen</groupId>
+        <artifactId>originalkeen-license-spring-boot-starter</artifactId>
+    </dependency>
+</dependencies>
+```
+
+If you are not using the BOM, declare the starter version explicitly:
 
 ```xml
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.5</version>
 </dependency>
 ```
 
-> This starter automatically pulls in the `originalkeen-license-spring-boot-autoconfigure` module.
-
----
-
 ## Configuration Properties
 
-The starter supports configuration via `application.yml` or `application.properties`.
+| Property | Default | Description |
+| --- | --- | --- |
+| `originalkeen.license.enabled` | `true` | Globally enables license support. |
+| `originalkeen.license.web-enabled` | `true` | Enables servlet request interception. |
+| `originalkeen.license.subject` | required when enabled | License subject passed to the runtime builder. |
+| `originalkeen.license.license-path` | blank | Optional startup install and hot reload path. If blank or unreadable, startup skips optional install. |
+| `originalkeen.license.public-alias` | required when enabled | Public key alias in the keystore. |
+| `originalkeen.license.public-key-store-path` | required when enabled | Public keystore path. Supports `classpath:` and filesystem paths. |
+| `originalkeen.license.public-password` | required when enabled | Password for the public keystore and cipher parameter. |
+| `originalkeen.license.exclude-paths` | custom list merged with built-in defaults | Extra servlet paths excluded from verification. |
 
-| Property                                     | Default | Description                                  |
-| -------------------------------------------- | ------- | -------------------------------------------- |
-| `originalkeen.license.enabled`               | `true`  | Enable license verification                  |
-| `originalkeen.license.web-enabled`           | `true`  | Enable web interceptor                       |
-| `originalkeen.license.subject`               | -       | License subject (required if enabled)        |
-| `originalkeen.license.license-path`          | -       | Path to the license file                     |
-| `originalkeen.license.public-alias`          | -       | Public key alias                             |
-| `originalkeen.license.public-key-store-path` | -       | Public key file path                         |
-| `originalkeen.license.public-password`       | -       | Public key password                          |
-| `originalkeen.license.exclude-paths`         | `[]`    | Web paths excluded from license interception |
+Built-in servlet exclusions always include `/actuator/**`, `/error`, `/favicon.ico`, and common static resource patterns such as CSS, JS, HTML, and image files.
 
-**Example (application.yml):**
+Example:
 
 ```yaml
 originalkeen:
@@ -57,90 +73,70 @@ originalkeen:
     license-path: "/opt/licenses/myapp.lic"
     public-alias: "public"
     public-key-store-path: "classpath:publicKey.keystore"
-    public-password: "changeit"
+    public-password: "changeit1"
     exclude-paths:
       - /login
-      - /actuator/**
+      - /api/public/**
 ```
 
----
+## Application Usage
 
-## Usage
-
-### Automatic License Installation
-
-The starter automatically installs the license on application startup if:
-
-* `enabled=true`
-* `license-path` is configured
-
-### Programmatic License Installation
+Inject `LicenseRuntime` when application code needs explicit checks or hardware inspection:
 
 ```java
-@Autowired
-private LicenseVerifyService licenseVerifyService;
+@Service
+public class LicenseGuardService {
 
-public void installLicense() {
-    licenseVerifyService.install("/path/to/license.lic");
+    private final LicenseRuntime licenseRuntime;
+
+    public LicenseGuardService(LicenseRuntime licenseRuntime) {
+        this.licenseRuntime = licenseRuntime;
+    }
+
+    public void verifyNow() {
+        licenseRuntime.verifyOrThrow();
+    }
 }
 ```
 
-### License Verification
+## Customization
 
-Programmatically check if license is valid:
-
-```java
-boolean valid = licenseVerifyService.verify();
-if (!valid) {
-    throw new RuntimeException("License verification failed");
-}
-```
-
-### Web Interceptor
-
-If `web-enabled=true`, all HTTP requests are intercepted for license validation.
-Excluded paths can be configured using `exclude-paths`. Requests failing license verification will return **HTTP 403 Forbidden**.
-
----
-
-## Extending and Customization
-
-You can override default beans if needed:
+### Override the Hardware Provider
 
 ```java
 @Bean
-@ConditionalOnMissingBean(HardwareDataProvider.class)
-public HardwareDataProvider customHardwareProvider() {
+public HardwareDataProvider hardwareDataProvider() {
     return new CustomHardwareProvider();
 }
+```
 
+### Refine Runtime Creation
+
+```java
 @Bean
-@ConditionalOnMissingBean(LicenseParam.class)
-public LicenseParam customLicenseParam(LicenseProperties properties) {
-    return new CustomLicenseParam(properties);
+public LicenseRuntimeCustomizer licenseRuntimeCustomizer() {
+    return builder -> builder.preferencesNodeName("/my/company/license");
 }
 ```
 
----
+If you already inject `LicenseVerifyService`, that compatibility bean remains available in the first V2 release line. New Spring code should prefer `LicenseRuntime`.
 
-## Logging
+## Migration Notes
 
-The starter logs important events:
+The starter keeps the same property namespace and the same high-level startup and filter behavior, but the primary bean model has changed:
 
-* License installation success/failure
-* License verification success/failure
-* License expiration warnings (15 days before expiry)
+- preferred bean now: `LicenseRuntime`
+- compatibility bean still available: `LicenseVerifyService`
+- low-level `LicenseParam` customization is no longer the default extension path
 
----
+For detailed migration guidance, see [../docs/v2/spring-migration-guide.md](../docs/v2/spring-migration-guide.md).
 
-## Notes
+## Platform Notes
 
-* Ensure public key files are accessible via classpath or filesystem.
-* Hardware detection may require elevated permissions on Linux.
-* Successful verification results are cached for 60 seconds to improve performance.
-
----
+- Built-in runtime providers support Windows and Linux.
+- For macOS or other operating systems, register a custom `HardwareDataProvider`.
+- Linux hardware collection may require elevated privileges for some serial number lookup strategies.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License 2.0.

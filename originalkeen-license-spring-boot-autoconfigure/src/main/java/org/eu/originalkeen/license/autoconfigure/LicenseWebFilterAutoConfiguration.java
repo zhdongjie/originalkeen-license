@@ -1,7 +1,7 @@
 package org.eu.originalkeen.license.autoconfigure;
 
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
-import org.eu.originalkeen.license.core.service.LicenseVerifyService;
+import org.eu.originalkeen.license.runtime.LicenseRuntime;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -11,14 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 
 /**
- * Auto-configuration for registering {@link LicenseFilter} in a servlet-based
- * Spring Web application.
- *
- * <p>This configuration is activated only when:</p>
- * <ul>
- *   <li>The application is a servlet web application.</li>
- *   <li>{@code originalkeen.license.web-enabled=true}, or the property is absent.</li>
- * </ul>
+ * Auto-configuration for registering the runtime-backed servlet filter.
  */
 @AutoConfiguration(after = LicenseAutoConfiguration.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -30,28 +23,15 @@ import org.springframework.core.Ordered;
 )
 public class LicenseWebFilterAutoConfiguration {
 
-    /**
-     * Creates the {@link LicenseFilter} bean only in web applications.
-     *
-     * @param licenseVerifyService the service used to verify license validity
-     * @param licenseProperties configuration properties controlling filter behavior
-     * @return a new {@link LicenseFilter} instance
-     */
     @Bean
     @ConditionalOnMissingBean(LicenseFilter.class)
     public LicenseFilter licenseFilter(
-            LicenseVerifyService licenseVerifyService,
+            LicenseRuntime licenseRuntime,
             LicenseProperties licenseProperties
     ) {
-        return new LicenseFilter(licenseVerifyService, licenseProperties);
+        return new LicenseFilter(licenseRuntime, licenseProperties);
     }
 
-    /**
-     * Registers the {@link LicenseFilter} with the servlet container.
-     *
-     * @param licenseFilter the filter instance to register
-     * @return the configured {@link FilterRegistrationBean}
-     */
     @Bean(name = "licenseFilterRegistration")
     @ConditionalOnMissingBean(name = "licenseFilterRegistration")
     public FilterRegistrationBean<LicenseFilter> licenseFilterRegistration(

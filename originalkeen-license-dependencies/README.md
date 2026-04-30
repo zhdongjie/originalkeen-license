@@ -1,21 +1,16 @@
 # OriginalKeen License Dependencies (BOM)
 
-`originalkeen-license-dependencies` provides a **Bill of Materials (BOM)** for the OriginalKeen License ecosystem. It centralizes dependency management, ensuring that all internal modules and external libraries are version-aligned and fully compatible.
+`originalkeen-license-dependencies` provides the Bill of Materials for the OriginalKeen License ecosystem. Importing this BOM keeps internal module versions aligned and centralizes the third-party versions used by the project.
 
-By importing this BOM, users can avoid "Version Hell" and ensure a stable integration of the license management system.
+## What It Manages
 
-## Features
-
-* **Centralized Versioning**: Manage all `originalkeen-license` module versions from a single point.
-* **Spring Boot Alignment**: Synchronizes project dependencies with the recommended Spring Boot stack.
-* **Dependency Consistency**: Guarantees that `core`, `model`, and `starter` modules work together flawlessly.
-* **Simplified Maintenance**: Upgrade the entire license framework by changing just one version number in your configuration.
+- OriginalKeen module versions across `model`, `core`, `runtime`, `autoconfigure`, and `starter`
+- Spring Boot dependency alignment through `spring-boot-dependencies`
+- Shared third-party versions such as TrueLicense and Log4j2
 
 ## Installation
 
 ### Maven
-
-To use this BOM, add it to the `<dependencyManagement>` section of your `pom.xml`. This allows you to omit version numbers when declaring dependencies on specific OriginalKeen modules.
 
 ```xml
 <dependencyManagement>
@@ -23,69 +18,63 @@ To use this BOM, add it to the `<dependencyManagement>` section of your `pom.xml
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>1.0.1</version>
+            <version>1.1.5</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
     </dependencies>
 </dependencyManagement>
-
 ```
 
 ### Gradle
 
-In Gradle 5.0+, you can use the `platform` keyword to import the BOM:
-
 ```groovy
 dependencies {
-    implementation platform('org.eu.originalkeen:originalkeen-license-dependencies:1.0.1')
+    implementation platform('org.eu.originalkeen:originalkeen-license-dependencies:1.1.5')
     implementation 'org.eu.originalkeen:originalkeen-license-spring-boot-starter'
 }
-
 ```
 
 ## Usage
 
-Once the BOM is imported, you can add any OriginalKeen License module to your project without specifying a version:
+Once the BOM is imported, you can declare OriginalKeen modules without repeating their versions:
 
 ```xml
 <dependencies>
     <dependency>
         <groupId>org.eu.originalkeen</groupId>
-        <artifactId>originalkeen-license-spring-boot-starter</artifactId>
+        <artifactId>originalkeen-license-runtime</artifactId>
     </dependency>
-    
+
     <dependency>
         <groupId>org.eu.originalkeen</groupId>
-        <artifactId>originalkeen-license-core</artifactId>
+        <artifactId>originalkeen-license-spring-boot-starter</artifactId>
     </dependency>
 </dependencies>
-
 ```
 
-## Managed Dependencies
-
-This BOM manages the following core components:
+## Managed Modules
 
 | Artifact ID | Description |
 | --- | --- |
-| `originalkeen-license-model` | Protocol and data model definitions. |
-| `originalkeen-license-core` | Core logic for hardware detection and validation. |
-| `originalkeen-license-spring-boot-autoconfigure` | Auto-configuration for Spring Boot applications. |
-| `originalkeen-license-spring-boot-starter` | Rapid integration entry point. |
+| `originalkeen-license-model` | Shared protocol models and compatibility contract. |
+| `originalkeen-license-core` | Verification engine, hardware providers, and keystore helpers. |
+| `originalkeen-license-runtime` | Preferred plain Java integration path through `LicenseRuntime`. |
+| `originalkeen-license-spring-boot-autoconfigure` | Runtime-backed Spring Boot bean registration, startup installer, and servlet filter registration. |
+| `originalkeen-license-spring-boot-starter` | End-user Spring Boot entry point. |
+
+## Recommended Pairings
+
+- Plain Java applications: BOM + `originalkeen-license-runtime`
+- Spring Boot applications: BOM + `originalkeen-license-spring-boot-starter`
+- Expert integrations: BOM + `originalkeen-license-core`
 
 ## Compatibility
 
-* **Java**: 17 or higher.
-* **Spring Boot**: 3.x.x ecosystem.
-* **Platforms**: Linux and Windows.
-
-## Contributing
-
-1. Fork the repository.
-2. Implement features or bug fixes.
-3. Submit a pull request to the `main` branch.
+- Java 17 or higher
+- Spring Boot dependency line managed by the BOM
+- Runtime hardware providers built in for Windows and Linux
 
 ## License
 
-This project is licensed under the **MIT License**.
+This project is licensed under the Apache License 2.0.

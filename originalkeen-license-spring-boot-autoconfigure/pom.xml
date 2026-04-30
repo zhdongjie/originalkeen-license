@@ -4,7 +4,7 @@
     <parent>
         <groupId>org.eu.originalkeen</groupId>
         <artifactId>originalkeen-license</artifactId>
-        <version>1.1.5</version>
+        <version>1.1.5-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -55,16 +55,9 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Core module dependencies -->
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
-            <artifactId>originalkeen-license-core</artifactId>
-        </dependency>
-
-        <!-- Model module dependencies -->
-        <dependency>
-            <groupId>org.eu.originalkeen</groupId>
-            <artifactId>originalkeen-license-model</artifactId>
+            <artifactId>originalkeen-license-runtime</artifactId>
         </dependency>
 
         <!-- Optional, required for Web automatic configuration -->
@@ -105,6 +98,18 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>

@@ -1,7 +1,5 @@
 package org.eu.originalkeen.license.core.constant;
 
-import java.util.Set;
-
 /**
  * License module constants.
  *
@@ -19,29 +17,6 @@ public class LicenseConstants {
      * Default character set for XML files.
      */
     public static final String XML_CHARSET = "UTF-8";
-
-    /**
-     * Default exclude paths for the servlet filter.
-     *
-     * <p>The values are expressed as Ant-style patterns because
-     * {@code LicenseFilter} uses {@code AntPathMatcher} to decide whether a
-     * request should bypass license validation.</p>
-     */
-    public static final Set<String> DEFAULT_EXCLUDE_PATHS = Set.of(
-            "/actuator/**",
-            "/error",
-            "/favicon.ico",
-            "/webjars/**",
-            "/**/*.css",
-            "/**/*.js",
-            "/**/*.html",
-            "/**/*.png",
-            "/**/*.jpg",
-            "/**/*.jpeg",
-            "/**/*.gif",
-            "/**/*.svg",
-            "/**/*.ico"
-    );
 
     /**
      * Private constructor to prevent instantiation.

@@ -3,30 +3,14 @@ package org.eu.originalkeen.license.autoconfigure;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
-import org.eu.originalkeen.license.core.service.LicenseVerifyService;
+import org.eu.originalkeen.license.runtime.LicenseRuntime;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.util.StringUtils;
 
 /**
- * {@code LicenseStartupAutoConfiguration} is a Spring Boot auto-configuration
- * class that runs at application startup to ensure the license is installed and valid.
- *
- * <p>This configuration is conditional on:</p>
- * <ul>
- *     <li>{@code originalkeen.license.enabled=true} (default true)</li>
- * </ul>
- *
- * <p>The class implements {@link ApplicationRunner}, so its {@code run} method
- * executes after the Spring Boot application context is fully initialized.</p>
- *
- * <p>This ensures that the license is installed at startup before the application
- * begins handling requests or executing scheduled tasks.</p>
- *
- * <p>It is configured to run after {@link LicenseAutoConfiguration}, ensuring
- * that all necessary beans (e.g., {@link LicenseVerifyService}) are available.</p>
+ * Startup auto-configuration that delegates optional install behavior to the V2 runtime.
  */
 @AutoConfiguration(after = LicenseAutoConfiguration.class)
 @ConditionalOnProperty(
@@ -39,29 +23,17 @@ public class LicenseStartupAutoConfiguration implements ApplicationRunner {
 
     private static final Logger log = LogManager.getLogger(LicenseStartupAutoConfiguration.class);
 
-    private final LicenseVerifyService licenseVerifyService;
+    private final LicenseRuntime licenseRuntime;
     private final LicenseProperties properties;
 
     public LicenseStartupAutoConfiguration(
-            LicenseVerifyService licenseVerifyService,
+            LicenseRuntime licenseRuntime,
             LicenseProperties properties
     ) {
-        this.licenseVerifyService = licenseVerifyService;
+        this.licenseRuntime = licenseRuntime;
         this.properties = properties;
     }
 
-    /**
-     * Executes at application startup to install the license if enabled and configured.
-     *
-     * <p>Logic:</p>
-     * <ul>
-     *     <li>If license verification is disabled via {@code originalkeen.license.enabled=false}, it skips installation.</li>
-     *     <li>If {@code originalkeen.license.license-path} is not set, it logs a warning and skips installation.</li>
-     *     <li>Otherwise, attempts to install the license using {@link LicenseVerifyService}.</li>
-     * </ul>
-     *
-     * @param args the application arguments passed by Spring Boot
-     */
     @Override
     public void run(ApplicationArguments args) {
         if (!properties.isEnabled()) {
@@ -69,16 +41,13 @@ public class LicenseStartupAutoConfiguration implements ApplicationRunner {
             return;
         }
 
-        String licensePath = properties.getLicensePath();
-        if (!StringUtils.hasText(licensePath)) {
-            log.warn("License path not configured (originalkeen.license.license-path), skipping installation");
-            return;
-        }
-
         try {
-            log.info("Starting license installation, path: {}", licensePath);
-            licenseVerifyService.install(licensePath);
-            log.info("License installed successfully");
+            boolean installed = licenseRuntime.installIfPresent();
+            if (installed) {
+                log.info("License installed successfully through runtime startup flow");
+            } else {
+                log.warn("License installation skipped because no readable configured license file is currently available");
+            }
         } catch (Exception e) {
             log.error("License installation failed", e);
             throw new RuntimeException("License installation failed: " + e.getMessage(), e);

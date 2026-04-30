@@ -9,6 +9,7 @@ Use this guide when:
 - You are publishing a new version under `org.eu.originalkeen`
 - You are releasing from WSL or Linux
 - You want one fixed sequence that covers GPG, Maven, Central Portal, validation, and publish
+- You are publishing the full current reactor, including `originalkeen-license-runtime`
 
 Validated release environment for this project:
 
@@ -199,10 +200,10 @@ Recommended release conditions:
 
 ### 4.3 Update the Version
 
-Example for `1.1.3`:
+Example:
 
 ```bash
-/usr/local/apache-maven-3.9.6/bin/mvn versions:set -DnewVersion=1.1.3
+/usr/local/apache-maven-3.9.6/bin/mvn versions:set -DnewVersion=<target-version>
 ```
 
 Notes:
@@ -237,7 +238,7 @@ If this passes, your project is ready for a signed release.
 Use the standard release script:
 
 ```bash
-bash scripts/release.sh 1.1.3
+bash scripts/release.sh <target-version>
 ```
 
 What the script does:
@@ -251,7 +252,7 @@ What the script does:
 If you already updated the version manually and only want the deploy step, use:
 
 ```bash
-SKIP_VERSION_SET=true bash scripts/release.sh 1.1.3
+SKIP_VERSION_SET=true bash scripts/release.sh <target-version>
 ```
 
 ### 4.7 Check Portal Status
@@ -281,7 +282,7 @@ Search for:
 
 ```bash
 cd /usr/local/project/originalkeen-license
-/usr/local/apache-maven-3.9.6/bin/mvn versions:set -DnewVersion=1.1.3
+/usr/local/apache-maven-3.9.6/bin/mvn versions:set -DnewVersion=<target-version>
 ```
 
 ### 5.2 Manual Preflight Build
@@ -302,7 +303,7 @@ bash scripts/check-release.sh
 ### 5.4 Scripted Release
 
 ```bash
-bash scripts/release.sh 1.1.3
+bash scripts/release.sh <target-version>
 ```
 
 ## 6. Environment Variables Used by the Scripts

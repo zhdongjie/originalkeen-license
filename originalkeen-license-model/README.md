@@ -1,17 +1,32 @@
-# originalkeen-license-model
+# OriginalKeen License Model
 
-This module defines the **license protocol** shared between:
+`originalkeen-license-model` defines the protocol objects shared between the runtime verification side and the license issuing side.
 
-- License runtime (Spring Boot starter)
-- License platform (issuer / management system)
+The stability of this module matters to both the current release line and the planned V2 runtime layer because it is the shared contract between scripts, issuing workflows, and runtime verification.
+
+## Included Types
+
+- `LicenseCheckModel`: hardware binding payload for CPU, motherboard, IP, and MAC matching
+- `LicenseHeader`: optional metadata object for issuer-side or integration-side protocol extensions
+- `LicenseProtocol`: marker interface for serializable, versioned protocol objects
 
 ## Compatibility Rules
 
-- Package name MUST NOT be changed
-- Fields can be added, but MUST NOT be removed or renamed
-- Breaking changes require a major version bump
+- Package names must remain stable.
+- Fields may be added, but they must not be removed or renamed.
+- Breaking protocol changes require a major version bump.
 
 ## Serialization
 
-- Current protocol uses Java Serializable
-- Protocol version is defined by `protocolVersion`
+- All protocol objects implement Java `Serializable`.
+- Producers should set `protocolVersion`, and consumers should preserve it during transport or storage.
+
+## Typical Role in the Project
+
+- `originalkeen-license-core` reads `LicenseCheckModel` during runtime verification.
+- Client information collection scripts emit JSON using the same field names as `LicenseCheckModel`.
+- Issuing-side tooling can reuse the same model classes to avoid field-name drift across systems.
+
+## License
+
+This project is licensed under the Apache License 2.0.
