@@ -41,6 +41,8 @@ require_command git
 require_command gpg
 require_file "$MAVEN_BIN"
 require_file "$SETTINGS_FILE"
+require_file "$SCRIPT_DIR/check-dependency-boundaries.sh"
+require_file "$SCRIPT_DIR/check-spring-boot-compatibility.sh"
 
 require_env_if_referenced CENTRAL_TOKEN_USERNAME
 require_env_if_referenced CENTRAL_TOKEN_PASSWORD
@@ -64,5 +66,15 @@ cd "$PROJECT_DIR"
   -DskipTests="$SKIP_TESTS" \
   -Dgpg.skip=true \
   clean install
+
+print_step "Checking dependency boundaries"
+MAVEN_BIN="$MAVEN_BIN" SETTINGS_FILE="$SETTINGS_FILE" \
+  bash "$SCRIPT_DIR/check-dependency-boundaries.sh"
+
+if [[ "$SKIP_TESTS" != "true" ]]; then
+  print_step "Checking newer Spring Boot compatibility"
+  MAVEN_BIN="$MAVEN_BIN" SETTINGS_FILE="$SETTINGS_FILE" \
+    bash "$SCRIPT_DIR/check-spring-boot-compatibility.sh"
+fi
 
 print_step "Preflight checks passed"

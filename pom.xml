@@ -47,9 +47,12 @@
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Internal reactor baselines; the public OriginalKeen BOM does not export them. -->
-        <spring-boot.version>3.5.9</spring-boot.version>
+        <!-- Library dependency baselines. Spring Boot versions are owned by the
+             dedicated integration modules, not by the neutral parent. -->
         <truelicense.version>1.33</truelicense.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <junit-jupiter.version>5.12.2</junit-jupiter.version>
+        <mockito.version>5.17.0</mockito.version>
 
         <!-- Plugin versions -->
         <maven-compiler-plugin.version>3.12.1</maven-compiler-plugin.version>
@@ -75,16 +78,6 @@
     <!-- ===================== Dependency Management (BOM) ===================== -->
     <dependencyManagement>
         <dependencies>
-            <!-- Build-time alignment only. Consuming applications retain ownership of
-                 their Spring Boot dependency line. -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-
             <dependency>
                 <groupId>de.schlichtherle.truelicense</groupId>
                 <artifactId>truelicense-core</artifactId>
