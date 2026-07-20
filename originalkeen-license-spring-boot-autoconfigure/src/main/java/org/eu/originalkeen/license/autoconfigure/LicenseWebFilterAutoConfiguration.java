@@ -1,8 +1,11 @@
 package org.eu.originalkeen.license.autoconfigure;
 
+import jakarta.servlet.Filter;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
 import org.eu.originalkeen.license.runtime.LicenseRuntime;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -14,6 +17,8 @@ import org.springframework.core.Ordered;
  * Auto-configuration for registering the runtime-backed servlet filter.
  */
 @AutoConfiguration(after = LicenseAutoConfiguration.class)
+@ConditionalOnClass({Filter.class, FilterRegistrationBean.class})
+@ConditionalOnBean(LicenseRuntime.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 @ConditionalOnProperty(
         prefix = "originalkeen.license",

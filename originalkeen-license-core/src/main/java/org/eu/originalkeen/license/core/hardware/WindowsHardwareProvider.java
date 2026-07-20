@@ -1,7 +1,7 @@
 package org.eu.originalkeen.license.core.hardware;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -15,7 +15,7 @@ import java.io.InputStreamReader;
  */
 public class WindowsHardwareProvider extends AbstractHardwareProvider {
 
-    private static final Logger log = LogManager.getLogger(WindowsHardwareProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(WindowsHardwareProvider.class);
 
     /**
      * Retrieves CPU serial number on Windows.

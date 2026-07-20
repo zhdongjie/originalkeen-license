@@ -22,7 +22,7 @@ V2 resolves this by introducing a dedicated runtime layer above `core`.
 
 | Module | Role in V2 | Depends On |
 | --- | --- | --- |
-| `originalkeen-license-dependencies` | BOM for all public artifacts and aligned third-party versions | none |
+| `originalkeen-license-dependencies` | BOM for aligning public OriginalKeen artifacts without overriding consumer-owned third-party versions | none |
 | `originalkeen-license-model` | Shared protocol objects and compatibility contract | none |
 | `originalkeen-license-core` | Low-level verification engine, TrueLicense adapter, hardware providers, keystore helpers, advanced service layer | `model` |
 | `originalkeen-license-runtime` | Public framework-free runtime facade, configuration model, result types, exceptions, default provider resolution | `core`, `model` |
@@ -117,4 +117,3 @@ Public responsibility:
 - Issuer-side tool redesign
 - Reactive or non-servlet framework adapters
 - Replacing hardware matching rules or license storage format
-

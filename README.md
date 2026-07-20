@@ -26,7 +26,7 @@ Design and rollout documents are kept in [docs/v2/README.md](docs/v2/README.md).
 
 ## Module Overview
 
-1. `originalkeen-license-dependencies`: BOM for internal modules and aligned third-party versions.
+1. `originalkeen-license-dependencies`: BOM that aligns only the public OriginalKeen modules and leaves third-party version ownership to consumers.
 2. `originalkeen-license-model`: Shared protocol models and compatibility contract.
 3. `originalkeen-license-core`: Verification engine, hardware providers, keystore helpers, and expert-level assembly APIs.
 4. `originalkeen-license-runtime`: Preferred plain Java integration path through `LicenseRuntime`.
@@ -43,7 +43,7 @@ Design and rollout documents are kept in [docs/v2/README.md](docs/v2/README.md).
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>1.1.5</version>
+            <version>1.3.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -129,6 +129,8 @@ If you need explicit checks in application code, inject `LicenseRuntime`. If you
 - Spring Boot auto-configuration: [originalkeen-license-spring-boot-autoconfigure/README.md](originalkeen-license-spring-boot-autoconfigure/README.md)
 - Spring Boot starter: [originalkeen-license-spring-boot-starter/README.md](originalkeen-license-spring-boot-starter/README.md)
 - V2 design and rollout set: [docs/v2/README.md](docs/v2/README.md)
+- Dependency governance policy: [docs/dependency-governance.md](docs/dependency-governance.md)
+- Version 1.3 dependency migration: [docs/migration-1.3.md](docs/migration-1.3.md)
 
 ## Client Information Collection
 

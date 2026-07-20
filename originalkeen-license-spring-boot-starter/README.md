@@ -22,7 +22,7 @@ Import the BOM and then add the starter dependency without repeating versions:
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>1.1.5</version>
+            <version>1.3.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -43,7 +43,7 @@ If you are not using the BOM, declare the starter version explicitly:
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-spring-boot-starter</artifactId>
-    <version>1.1.5</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 

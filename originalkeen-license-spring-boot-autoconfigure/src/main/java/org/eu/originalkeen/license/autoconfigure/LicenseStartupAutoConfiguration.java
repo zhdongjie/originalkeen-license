@@ -1,18 +1,20 @@
 package org.eu.originalkeen.license.autoconfigure;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
 import org.eu.originalkeen.license.runtime.LicenseRuntime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 
 /**
  * Startup auto-configuration that delegates optional install behavior to the V2 runtime.
  */
 @AutoConfiguration(after = LicenseAutoConfiguration.class)
+@ConditionalOnBean(LicenseRuntime.class)
 @ConditionalOnProperty(
         prefix = "originalkeen.license",
         name = "enabled",
@@ -21,7 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 )
 public class LicenseStartupAutoConfiguration implements ApplicationRunner {
 
-    private static final Logger log = LogManager.getLogger(LicenseStartupAutoConfiguration.class);
+    private static final Logger log = LoggerFactory.getLogger(LicenseStartupAutoConfiguration.class);
 
     private final LicenseRuntime licenseRuntime;
     private final LicenseProperties properties;

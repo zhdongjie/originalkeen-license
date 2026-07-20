@@ -22,7 +22,7 @@ This module no longer hand-assembles the primary `core` path directly. Instead, 
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-spring-boot-autoconfigure</artifactId>
-    <version>1.1.5</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 

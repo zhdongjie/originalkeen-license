@@ -1,12 +1,12 @@
 # OriginalKeen License Dependencies (BOM)
 
-`originalkeen-license-dependencies` provides the Bill of Materials for the OriginalKeen License ecosystem. Importing this BOM keeps internal module versions aligned and centralizes the third-party versions used by the project.
+`originalkeen-license-dependencies` provides the Bill of Materials for the OriginalKeen License ecosystem. Importing it keeps public OriginalKeen modules aligned without changing dependency versions owned by the consuming application.
 
 ## What It Manages
 
 - OriginalKeen module versions across `model`, `core`, `runtime`, `autoconfigure`, and `starter`
-- Spring Boot dependency alignment through `spring-boot-dependencies`
-- Shared third-party versions such as TrueLicense and Log4j2
+- It intentionally does not import `spring-boot-dependencies` or manage logging implementations
+- Spring Boot applications retain control of their Spring, Servlet, and logging dependency lines
 
 ## Installation
 
@@ -18,7 +18,7 @@
         <dependency>
             <groupId>org.eu.originalkeen</groupId>
             <artifactId>originalkeen-license-dependencies</artifactId>
-            <version>1.1.5</version>
+            <version>1.3.0</version>
             <type>pom</type>
             <scope>import</scope>
         </dependency>
@@ -30,7 +30,7 @@
 
 ```groovy
 dependencies {
-    implementation platform('org.eu.originalkeen:originalkeen-license-dependencies:1.1.5')
+    implementation platform('org.eu.originalkeen:originalkeen-license-dependencies:1.3.0')
     implementation 'org.eu.originalkeen:originalkeen-license-spring-boot-starter'
 }
 ```
@@ -72,7 +72,8 @@ Once the BOM is imported, you can declare OriginalKeen modules without repeating
 ## Compatibility
 
 - Java 17 or higher
-- Spring Boot dependency line managed by the BOM
+- Spring Boot version selected by the consuming application
+- Spring Boot 3.5.x is the current tested integration baseline
 - Runtime hardware providers built in for Windows and Linux
 
 ## License

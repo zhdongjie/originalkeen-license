@@ -4,8 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eu.originalkeen.license.autoconfigure.properties.LicenseProperties;
 import org.eu.originalkeen.license.runtime.LicenseRuntime;
 import org.eu.originalkeen.license.runtime.LicenseVerificationResult;
@@ -20,7 +20,7 @@ import java.io.IOException;
  */
 public class LicenseFilter extends OncePerRequestFilter {
 
-    private static final Logger log = LogManager.getLogger(LicenseFilter.class);
+    private static final Logger log = LoggerFactory.getLogger(LicenseFilter.class);
 
     private final LicenseRuntime licenseRuntime;
     private final LicenseProperties licenseProperties;

@@ -24,14 +24,14 @@
 <dependency>
     <groupId>org.eu.originalkeen</groupId>
     <artifactId>originalkeen-license-runtime</artifactId>
-    <version>1.1.5</version>
+    <version>1.3.0</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'org.eu.originalkeen:originalkeen-license-runtime:1.1.5'
+implementation 'org.eu.originalkeen:originalkeen-license-runtime:1.3.0'
 ```
 
 ## Common Usage

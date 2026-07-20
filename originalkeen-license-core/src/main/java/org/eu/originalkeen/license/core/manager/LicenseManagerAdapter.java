@@ -7,8 +7,8 @@ import de.schlichtherle.license.LicenseNotary;
 import de.schlichtherle.license.LicenseParam;
 import de.schlichtherle.license.NoLicenseInstalledException;
 import de.schlichtherle.xml.GenericCertificate;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eu.originalkeen.license.core.constant.LicenseConstants;
 import org.eu.originalkeen.license.core.hardware.HardwareDataProvider;
 import org.eu.originalkeen.license.model.LicenseCheckModel;
@@ -61,7 +61,7 @@ import java.util.stream.Collectors;
  */
 public class LicenseManagerAdapter extends LicenseManager {
 
-    private static final Logger log = LogManager.getLogger(LicenseManagerAdapter.class);
+    private static final Logger log = LoggerFactory.getLogger(LicenseManagerAdapter.class);
 
     private final HardwareDataProvider hardwareDataProvider;
 

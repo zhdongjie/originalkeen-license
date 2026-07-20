@@ -1,8 +1,8 @@
 package org.eu.originalkeen.license.core.service;
 
 import de.schlichtherle.license.LicenseContent;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.eu.originalkeen.license.core.manager.LicenseManagerAdapter;
 import org.eu.originalkeen.license.model.LicenseCheckModel;
 
@@ -40,7 +40,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public class LicenseVerifyService {
 
-    private static final Logger log = LogManager.getLogger(LicenseVerifyService.class);
+    private static final Logger log = LoggerFactory.getLogger(LicenseVerifyService.class);
 
     private final LicenseManagerAdapter licenseManager;
 
